@@ -31,9 +31,36 @@ normalization. ml/src/dataset.py attaches the appropriate transform to each spli
 
 ### Food classification model
 
-Phase 3 will consume the DataLoaders produced by ml/src/dataset.py and predict one
-of the ten development classes. The current repository contains no model or training
-loop.
+The Phase 3 foundation consumes the DataLoaders produced by ml/src/dataset.py and
+predicts one of the ten development classes in their existing order. Torchvision
+EfficientNet-B0 uses explicit ImageNet `IMAGENET1K_V1` weights and a replacement
+10-output linear classifier. All layers are trainable; Phase 2 transforms are reused.
+
+- `model.py`: model configuration, pretrained initialization, classifier replacement.
+- `runtime.py`: MPS/CUDA/CPU selection and shared seeded initialization.
+- `training.py`: sample-weighted training/validation metrics; validation uses eval/no_grad.
+- `checkpoint.py`: atomic saves and strict, metadata-validated restoration without downloads.
+- `train.py`: CLI and AdamW/CrossEntropyLoss orchestration using train/validation only.
+- `verify_training.py`: short real-data checks plus isolated device/selection/error checks.
+- `evaluate.py`: explicit final official-test evaluation with overall/per-class metrics and confusion matrix.
+- `verify_evaluation.py`: synthetic-only metric, loader, checkpoint-immutability, and CLI-path checks.
+- `inference.py` / `predict.py`: reusable and command-line single-image prediction using checkpoint classes and Phase 2 transforms.
+- `verify_inference.py`: synthetic PIL image checks for preprocessing, probabilities, mapping, and read-only inference.
+
+Checkpoint selection uses validation accuracy, retaining the earlier epoch on ties.
+Training uses only the train and validation loaders. The explicit evaluation entry
+point passed the official test loader once and produced 94.48% accuracy, 0.176723
+loss, and 2,500 samples. The completed test result is frozen and must not guide further
+model selection. The shared Phase 2 factory still constructs all three split views
+and checks official metadata/path integrity. Synthetic inference verification does
+not load official Food-101 data.
+
+Single-image inference loads that same best checkpoint, applies the saved
+224×224 Phase 2 evaluation transform, and returns mapped softmax predictions. The
+implementation does not train or write the checkpoint. Generated checkpoints and
+evaluation JSON live in ignored `ml/artifacts/`. Phase 3 is complete. This is a
+closed-set classifier for the configured ten classes; it has no explicit unknown or
+out-of-distribution class.
 
 ### Nutrition/calorie data layer
 

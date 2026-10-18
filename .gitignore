@@ -11,6 +11,7 @@ ml/data/raw/
 ml/data/processed/
 
 # ML artifacts
+ml/artifacts/
 *.pth
 *.pt
 *.ckpt
