@@ -1,1 +1,16 @@
+# Python
 .venv/
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+
+# ML datasets
+ml/data/raw/
+ml/data/processed/
+
+# ML artifacts
+*.pth
+*.pt
+*.ckpt
