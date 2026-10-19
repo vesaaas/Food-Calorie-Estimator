@@ -398,5 +398,12 @@ weights/buffers/gradients, and unchanged checkpoint bytes. It uses no dataset im
 does no metric evaluation, and takes no optimizer steps.
 
 The classifier recognizes only the configured ten classes and has no explicit
-unknown or out-of-distribution class. Phase 3 is COMPLETE. Phase 4, the Nutrition
-and Calorie Data Layer, is next and is not implemented yet.
+unknown or out-of-distribution class. Phase 3 is COMPLETE. Its 94.48% held-out
+result is classification accuracy only, not nutrition or calorie-estimation accuracy;
+it remains frozen and was not rerun during Phase 4.
+
+Phase 4 adds a separate USDA FDC lookup and portion calculator for the existing ten
+labels. It does not change checkpoint classes, model code, confidence, or inference.
+See `docs/NUTRITION.md` for sources, default portions, calculations, and limitations.
+Future local-dish training and image-to-nutrition application integration remain
+planned.

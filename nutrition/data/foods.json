@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "catalog_version": "1.0.0",
+  "foods": [
+    {
+      "food_id": "pizza",
+      "display_name": "Pizza",
+      "reference_description": "Pizza, cheese, from restaurant or fast food, thick crust",
+      "mapping_notes": "Thick-crust restaurant cheese pizza; toppings and other crusts can differ.",
+      "per_100g": {
+        "protein_g": 10.8,
+        "fat_g": 10.5,
+        "carbohydrates_g": 33.2,
+        "energy_kcal": 271
+      },
+      "default_serving": {
+        "label": "1 piece, large pizza",
+        "grams": 132,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 303695
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2708617,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Pizza, cheese, from restaurant or fast food, thick crust",
+        "url": "https://fdc.nal.usda.gov/food-details/2708617/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "hamburger",
+      "display_name": "Hamburger",
+      "reference_description": "Hamburger, on white bun, 1 small patty",
+      "mapping_notes": "White bun and one small patty; excludes cheese and additional toppings. Representative approved for this class.",
+      "per_100g": {
+        "protein_g": 17.1,
+        "fat_g": 13.8,
+        "carbohydrates_g": 22.2,
+        "energy_kcal": 287
+      },
+      "default_serving": {
+        "label": "1 hamburger",
+        "grams": 115,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 296513
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2706927,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Hamburger, on white bun, 1 small patty",
+        "url": "https://fdc.nal.usda.gov/food-details/2706927/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "sushi",
+      "display_name": "Sushi",
+      "reference_description": "Sushi, NFS",
+      "mapping_notes": "USDA sushi not further specified (NFS); fillings and sauces vary. Default is one piece, not an entire plate.",
+      "per_100g": {
+        "protein_g": 2.92,
+        "fat_g": 0.67,
+        "carbohydrates_g": 18.4,
+        "energy_kcal": 94.0
+      },
+      "default_serving": {
+        "label": "1 piece",
+        "grams": 30,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 305381
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2708959,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Sushi, NFS",
+        "url": "https://fdc.nal.usda.gov/food-details/2708959/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "steak",
+      "display_name": "Steak",
+      "reference_description": "Beef, steak, sirloin, NS as to fat eaten",
+      "mapping_notes": "Sirloin, not specified (NS) as to fat eaten; other cuts and preparation methods differ.",
+      "per_100g": {
+        "protein_g": 27.1,
+        "fat_g": 14.0,
+        "carbohydrates_g": 0.0,
+        "energy_kcal": 239
+      },
+      "default_serving": {
+        "label": "1 regular",
+        "grams": 160,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 292133
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2705832,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Beef, steak, sirloin, NS as to fat eaten",
+        "url": "https://fdc.nal.usda.gov/food-details/2705832/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "ice_cream",
+      "display_name": "Ice cream",
+      "reference_description": "Ice cream, vanilla",
+      "mapping_notes": "Vanilla ice cream; other flavors and formulations differ. Uses the USDA scoop weight.",
+      "per_100g": {
+        "protein_g": 3.5,
+        "fat_g": 11.0,
+        "carbohydrates_g": 23.6,
+        "energy_kcal": 207
+      },
+      "default_serving": {
+        "label": "1 scoop",
+        "grams": 120,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 291301
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2705630,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Ice cream, vanilla",
+        "url": "https://fdc.nal.usda.gov/food-details/2705630/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "donuts",
+      "display_name": "Doughnuts",
+      "reference_description": "Doughnuts, yeast-leavened, glazed, enriched (includes honey buns)",
+      "mapping_notes": "Yeast-leavened glazed enriched doughnut; source description also includes honey buns. Filled and cake doughnuts differ.",
+      "per_100g": {
+        "protein_g": 6.14,
+        "fat_g": 22.7,
+        "carbohydrates_g": 47.9,
+        "energy_kcal": 421
+      },
+      "default_serving": {
+        "label": "1 doughnut",
+        "grams": 63.0,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 91318
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 172758,
+        "data_type": "SR Legacy",
+        "record_description": "Doughnuts, yeast-leavened, glazed, enriched (includes honey buns)",
+        "url": "https://fdc.nal.usda.gov/food-details/172758/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "SR Legacy April 2018",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_json_2018-04.zip"
+      }
+    },
+    {
+      "food_id": "omelette",
+      "display_name": "Omelette",
+      "reference_description": "Egg omelet or scrambled egg, no added fat",
+      "mapping_notes": "Omelet or scrambled egg without added fat; default is one egg. Fillings and cooking fats are not represented.",
+      "per_100g": {
+        "protein_g": 12.4,
+        "fat_g": 9.93,
+        "carbohydrates_g": 0.96,
+        "energy_kcal": 143
+      },
+      "default_serving": {
+        "label": "1 egg",
+        "grams": 50,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 297445
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2707205,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Egg omelet or scrambled egg, no added fat",
+        "url": "https://fdc.nal.usda.gov/food-details/2707205/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "french_fries",
+      "display_name": "French fries",
+      "reference_description": "Potato, french fries, restaurant",
+      "mapping_notes": "Restaurant fries; uses the source small fast-food-order measure, not a measured photographed portion.",
+      "per_100g": {
+        "protein_g": 3.49,
+        "fat_g": 14.0,
+        "carbohydrates_g": 37.2,
+        "energy_kcal": 289
+      },
+      "default_serving": {
+        "label": "1 small fast food order",
+        "grams": 110,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 307232
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2709462,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Potato, french fries, restaurant",
+        "url": "https://fdc.nal.usda.gov/food-details/2709462/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "chicken_wings",
+      "display_name": "Chicken wings",
+      "reference_description": "Chicken wing, baked, broiled, or roasted, from raw",
+      "mapping_notes": "Baked, broiled, or roasted from raw; breading, frying, and sauces are not represented. Portion mass is edible food, not bone-in scale weight.",
+      "per_100g": {
+        "protein_g": 23.6,
+        "fat_g": 16.7,
+        "carbohydrates_g": 0.0,
+        "energy_kcal": 252
+      },
+      "default_serving": {
+        "label": "1 wing, any size",
+        "grams": 35,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 293481
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2706057,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Chicken wing, baked, broiled, or roasted, from raw",
+        "url": "https://fdc.nal.usda.gov/food-details/2706057/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "spaghetti_bolognese",
+      "display_name": "Spaghetti bolognese",
+      "reference_description": "Restaurant, Italian, spaghetti with meat sauce",
+      "mapping_notes": "Restaurant Italian spaghetti with meat sauce is a representative proxy, not a specific Bolognese recipe. The USDA restaurant serving is 554 g.",
+      "per_100g": {
+        "fat_g": 3.59,
+        "carbohydrates_g": 16.4,
+        "energy_kcal": 121,
+        "protein_g": 5.79
+      },
+      "default_serving": {
+        "label": "1 serving",
+        "grams": 554.0,
+        "basis": "USDA source-provided household portion; grams refer to edible food.",
+        "source_portion_id": 81745
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 167680,
+        "data_type": "SR Legacy",
+        "record_description": "Restaurant, Italian, spaghetti with meat sauce",
+        "url": "https://fdc.nal.usda.gov/food-details/167680/nutrients",
+        "retrieved_on": "2026-10-19",
+        "release": "SR Legacy April 2018",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_json_2018-04.zip"
+      }
+    }
+  ]
+}

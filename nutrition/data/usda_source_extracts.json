@@ -1,0 +1,798 @@
+{
+  "retrieved_on": "2026-10-19",
+  "note": "Selected fields copied from official USDA JSON archives; only the four canonical nutrients and chosen portion are retained. Nutrient amounts are per 100 g.",
+  "archives": [
+    {
+      "release": "FNDDS 2021-2023",
+      "url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip",
+      "sha256": "dfb06ae7ddc397ccd570b91c14b75438ab2ba39f64f22d321f61d4a52a77f3eb"
+    },
+    {
+      "release": "SR Legacy April 2018",
+      "url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_json_2018-04.zip",
+      "sha256": "0fe8ae486a2c8eb42cb96413f058deb51863a46c8fb8eeb4b1fb45006dd338ef"
+    }
+  ],
+  "records": [
+    {
+      "fdcId": 2708617,
+      "description": "Pizza, cheese, from restaurant or fast food, thick crust",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 34346304,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "amount": 10.8
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34346305,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "amount": 10.5
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34346306,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "amount": 33.2
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34346307,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "amount": 271
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 303695,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "64370",
+          "gramWeight": 132,
+          "portionDescription": "1 piece, large pizza",
+          "sequenceNumber": 4
+        }
+      ]
+    },
+    {
+      "fdcId": 2706927,
+      "description": "Hamburger, on white bun, 1 small patty",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 34236454,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "amount": 17.1
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34236455,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "amount": 13.8
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34236456,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "amount": 22.2
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34236457,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "amount": 287
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 296513,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "60844",
+          "gramWeight": 115,
+          "portionDescription": "1 hamburger",
+          "sequenceNumber": 1
+        }
+      ]
+    },
+    {
+      "fdcId": 2708959,
+      "description": "Sushi, NFS",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 34368534,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "amount": 2.92
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34368535,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "amount": 0.67
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34368536,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "amount": 18.4
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34368537,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "amount": 94.0
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 305381,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "61667",
+          "gramWeight": 30,
+          "portionDescription": "1 piece",
+          "sequenceNumber": 1
+        }
+      ]
+    },
+    {
+      "fdcId": 2705832,
+      "description": "Beef, steak, sirloin, NS as to fat eaten",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 34165279,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "amount": 27.1
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34165280,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "amount": 14.0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34165281,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "amount": 0.0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34165282,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "amount": 239
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 292133,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "62862",
+          "gramWeight": 160,
+          "portionDescription": "1 regular",
+          "sequenceNumber": 3
+        }
+      ]
+    },
+    {
+      "fdcId": 2705630,
+      "description": "Ice cream, vanilla",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 34152149,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "amount": 3.5
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34152150,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "amount": 11.0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34152151,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "amount": 23.6
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34152152,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "amount": 207
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 291301,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "64289",
+          "gramWeight": 120,
+          "portionDescription": "1 scoop",
+          "sequenceNumber": 2
+        }
+      ]
+    },
+    {
+      "fdcId": 172758,
+      "description": "Doughnuts, yeast-leavened, glazed, enriched (includes honey buns)",
+      "dataType": "SR Legacy",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 1721662,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "dataPoints": 8,
+          "foodNutrientDerivation": {
+            "code": "A",
+            "description": "Analytical",
+            "foodNutrientSource": {
+              "id": 1,
+              "code": "1",
+              "description": "Analytical or derived from analytical"
+            }
+          },
+          "max": 6.88,
+          "min": 4.69,
+          "amount": 6.14
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 1721708,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "dataPoints": 8,
+          "foodNutrientDerivation": {
+            "code": "A",
+            "description": "Analytical",
+            "foodNutrientSource": {
+              "id": 1,
+              "code": "1",
+              "description": "Analytical or derived from analytical"
+            }
+          },
+          "max": 24.8,
+          "min": 14.8,
+          "amount": 22.7
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 1721709,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "dataPoints": 0,
+          "foodNutrientDerivation": {
+            "code": "NC",
+            "description": "Calculated",
+            "foodNutrientSource": {
+              "id": 2,
+              "code": "4",
+              "description": "Calculated or imputed"
+            }
+          },
+          "amount": 47.9
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 1721710,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "dataPoints": 0,
+          "foodNutrientDerivation": {
+            "code": "NC",
+            "description": "Calculated",
+            "foodNutrientSource": {
+              "id": 2,
+              "code": "4",
+              "description": "Calculated or imputed"
+            }
+          },
+          "amount": 421
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 91318,
+          "value": 1.0,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "doughnut",
+          "gramWeight": 63.0,
+          "sequenceNumber": 16,
+          "amount": 1.0
+        }
+      ]
+    },
+    {
+      "fdcId": 2707205,
+      "description": "Egg omelet or scrambled egg, no added fat",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 34254524,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "amount": 12.4
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34254525,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "amount": 9.93
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34254526,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "amount": 0.96
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34254527,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "amount": 143
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 297445,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "60710",
+          "gramWeight": 50,
+          "portionDescription": "1 egg",
+          "sequenceNumber": 1
+        }
+      ]
+    },
+    {
+      "fdcId": 2709462,
+      "description": "Potato, french fries, restaurant",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 34401229,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "amount": 3.49
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34401230,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "amount": 14.0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34401231,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "amount": 37.2
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34401232,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "amount": 289
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 307232,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "63758",
+          "gramWeight": 110,
+          "portionDescription": "1 small fast food order",
+          "sequenceNumber": 3
+        }
+      ]
+    },
+    {
+      "fdcId": 2706057,
+      "description": "Chicken wing, baked, broiled, or roasted, from raw",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 34179904,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "amount": 23.6
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34179905,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "amount": 16.7
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34179906,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "amount": 0.0
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 34179907,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "amount": 252
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 293481,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "64714",
+          "gramWeight": 35,
+          "portionDescription": "1 wing, any size",
+          "sequenceNumber": 1
+        }
+      ]
+    },
+    {
+      "fdcId": 167680,
+      "description": "Restaurant, Italian, spaghetti with meat sauce",
+      "dataType": "SR Legacy",
+      "foodNutrients": [
+        {
+          "type": "FoodNutrient",
+          "id": 1297031,
+          "nutrient": {
+            "id": 1004,
+            "number": "204",
+            "name": "Total lipid (fat)",
+            "rank": 800,
+            "unitName": "g"
+          },
+          "dataPoints": 12,
+          "foodNutrientDerivation": {
+            "code": "A",
+            "description": "Analytical",
+            "foodNutrientSource": {
+              "id": 1,
+              "code": "1",
+              "description": "Analytical or derived from analytical"
+            }
+          },
+          "max": 5.01,
+          "min": 2.36,
+          "amount": 3.59
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 1297032,
+          "nutrient": {
+            "id": 1005,
+            "number": "205",
+            "name": "Carbohydrate, by difference",
+            "rank": 1110,
+            "unitName": "g"
+          },
+          "dataPoints": 0,
+          "foodNutrientDerivation": {
+            "code": "NC",
+            "description": "Calculated",
+            "foodNutrientSource": {
+              "id": 2,
+              "code": "4",
+              "description": "Calculated or imputed"
+            }
+          },
+          "amount": 16.4
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 1297033,
+          "nutrient": {
+            "id": 1008,
+            "number": "208",
+            "name": "Energy",
+            "rank": 300,
+            "unitName": "kcal"
+          },
+          "dataPoints": 0,
+          "foodNutrientDerivation": {
+            "code": "NC",
+            "description": "Calculated",
+            "foodNutrientSource": {
+              "id": 2,
+              "code": "4",
+              "description": "Calculated or imputed"
+            }
+          },
+          "amount": 121
+        },
+        {
+          "type": "FoodNutrient",
+          "id": 1297084,
+          "nutrient": {
+            "id": 1003,
+            "number": "203",
+            "name": "Protein",
+            "rank": 600,
+            "unitName": "g"
+          },
+          "dataPoints": 12,
+          "foodNutrientDerivation": {
+            "code": "A",
+            "description": "Analytical",
+            "foodNutrientSource": {
+              "id": 1,
+              "code": "1",
+              "description": "Analytical or derived from analytical"
+            }
+          },
+          "max": 6.44,
+          "min": 4.81,
+          "amount": 5.79
+        }
+      ],
+      "foodPortions": [
+        {
+          "id": 81745,
+          "value": 1.0,
+          "measureUnit": {
+            "id": 9999,
+            "name": "undetermined",
+            "abbreviation": "undetermined"
+          },
+          "modifier": "serving",
+          "gramWeight": 554.0,
+          "sequenceNumber": 1,
+          "amount": 1.0
+        }
+      ]
+    }
+  ]
+}

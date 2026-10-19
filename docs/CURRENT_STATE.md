@@ -10,8 +10,9 @@ dataset.
 Phase 3 — COMPLETE. EfficientNet-B0 training, validation-based checkpoint
 selection, one-time final held-out evaluation, and single-image inference are
 implemented and verified. The official test results are final and must not be used
-for further model selection. Phase 4, Nutrition and Calorie Data Layer, is next.
-There is no calorie prediction, mobile implementation, or nutrition mapping yet.
+for further model selection. Phase 4 — COMPLETE. Nutrition lookup and portion
+calculation are implemented for the existing ten classes. There is no mobile implementation, image-weight estimation, meal log,
+calorie goal, dashboard, or local-food classifier extension yet.
 
 ## Environment and dependencies
 
@@ -62,6 +63,9 @@ food-calorie-estimator/
 │       └── verify_inference.py
 ├── mobile/
 ├── nutrition/
+│   ├── data/foods.json          # Versioned ten-class USDA FDC catalog
+│   ├── data/usda_source_extracts.json  # Selected USDA rows and archive hashes
+│   └── src/                     # Catalog validation, portion calculator, CLI, verification
 ├── README.md
 ├── requirements.txt
 └── .gitignore
@@ -216,11 +220,32 @@ still receive one of those ten labels.
   Re-run verification after changing torchvision.
 - Food-101 training labels are known to contain some noise, and visual near-duplicates
   are not automatically detected.
-- A food class does not identify portion size or preparation details, so a future
-  nutrition estimate will require a separate nutrition data and product-design decision.
+- A food class does not identify portion size or preparation details. Phase 4 uses a
+  sourced representative record and serving; future UI work must let the user adjust
+  portions and must not claim image-derived weight.
+
+## Phase 4 nutrition layer — COMPLETE
+
+- `nutrition/data/foods.json` contains a versioned catalog for exactly the ten
+  current classifier labels. Each row records USDA FDC ID, source type/release,
+  reference description, retrieval date, four per-100 g nutrients, and a source-backed
+  default serving/portion ID.
+- `nutrition/data/usda_source_extracts.json` preserves the selected USDA nutrient and
+  portion rows, archive URLs, and SHA-256 hashes for local audit.
+- `nutrition/src/catalog.py` loads and validates JSON, provenance, exact lookup, and
+  optional exact class coverage. `calculator.py` scales from per-100 g values by a
+  default serving, explicit grams, or serving multiplier. `estimate.py` provides the
+  CLI. The core does not import PyTorch or depend on classifier confidence.
+- `nutrition/src/verify_nutrition.py` runs 15 offline checks, including all ten
+  classifier labels, USDA evidence, errors, calculations, non-mutation, CLI behavior,
+  and no-PyTorch import.
+- Food weight is not measured from an image. Broad class mappings are representative
+  estimates with preparation and recipe limitations.
 
 ## Next work
 
-Begin Phase 4: Nutrition and Calorie Data Layer. Preserve the selected checkpoint,
-keep the final held-out results out of model-selection decisions, keep generated
-artifacts ignored, and preserve the existing class order.
+Phase 4 is complete. Next, plan the local-dish dataset and classifier extension,
+image-to-nutrition integration, editable portion UI, daily log, personal calorie
+goal, daily and weekly dashboards, mobile experience, and final validation/release.
+Preserve the selected checkpoint and keep the frozen final held-out result out of
+model-selection decisions.

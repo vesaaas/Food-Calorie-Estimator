@@ -64,17 +64,27 @@ out-of-distribution class.
 
 ### Nutrition/calorie data layer
 
-Phase 4 will map a predicted food class to nutrition information using a separate
-data source and explicit assumptions about serving size. Food-101 provides food
-classification labels only; it does not directly provide calories, portion weights,
-macronutrients, or nutrition values.
+Phase 4 implements this handoff as exact class ID → USDA FDC catalog entry → default
+or user-selected portion → calories and macros. `nutrition/src/catalog.py` validates
+the local versioned JSON and source metadata; `calculator.py` performs per-100 g
+scaling; `estimate.py` exposes a small CLI. This layer has no PyTorch dependency.
+The class ID is the classifier's exact label string. It does not infer the class from
+confidence, class array position, or a fuzzy name match.
+
+FDC per-100 g energy, protein, carbohydrate, and total fat values form the canonical
+basis. Each record supplies a default serving weight and source portion ID. The
+calculator accepts the default, explicit grams, or a serving multiplier. Classifier
+confidence never scales nutrition values. Image classification does not estimate
+portion mass; it must be selected or entered by a user. The selected USDA entry is a
+representative reference for a broad dish class, not an exact match to every recipe
+or photographed meal. See `docs/NUTRITION.md` for record-level provenance and limits.
 
 ### Application, API, and mobile layers
 
 Later phases may expose inference through an API and connect it to the mobile
-application. Those components should consume a model prediction and nutrition
-lookup result through stable interfaces. They are currently placeholders represented
-by the existing mobile/ and nutrition/ directories.
+application. Those components should consume a model prediction and nutrition lookup result
+through stable interfaces. The mobile/ directory remains a placeholder; the
+nutrition/ directory now contains the Phase 4 catalog and calculator.
 
 ## Phase 2 boundary
 

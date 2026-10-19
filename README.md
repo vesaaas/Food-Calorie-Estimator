@@ -1,18 +1,18 @@
 # Food Calorie Estimator
 
-An AI/ML project for recognizing food in meal images and, in later phases, mapping
-predicted foods to estimated nutrition information.
+An AI/ML project that recognizes supported foods in meal images and maps classifier
+labels to representative nutrition estimates with adjustable portion calculations.
 
 ## Current status
 
 - Phase 1 — Project Setup: complete
 - Phase 2 — Dataset & Preprocessing: complete and verified
 - Phase 3 — Complete: trained classifier, final held-out evaluation, and single-image inference
-- Phase 4 — Next: Nutrition and Calorie Data Layer
+- Phase 4 — In progress: Nutrition and Calorie Data Layer
 
-Food-101 currently supports food classification only. It does not contain calorie,
-portion-size, or nutrition measurements. Nutrition mapping is planned for a later
-phase.
+Food-101 supports classification only. Phase 4 adds a separate local nutrition
+catalog sourced from USDA FoodData Central. Class recognition does not measure food
+weight; calorie and macro estimates use a default or user-selected portion.
 
 ## Setup
 
@@ -55,8 +55,20 @@ python ml/src/predict.py path/to/image.jpg --checkpoint ml/artifacts/efficientne
 
 See [the ML pipeline](docs/ML_PIPELINE.md) for per-class test results and inference
 verification. The classifier recognizes only the configured ten classes and has no
-explicit unknown or out-of-distribution class. Phase 4 nutrition/calorie data is
-the next work; it is not implemented yet.
+explicit unknown or out-of-distribution class. The final held-out result is a frozen
+classification result and must not be interpreted as nutrition accuracy.
+
+## Phase 4 nutrition examples
+
+~~~bash
+python nutrition/src/estimate.py pizza
+python nutrition/src/estimate.py pizza --servings 1.5
+python nutrition/src/estimate.py pizza --grams 180
+python nutrition/src/verify_nutrition.py
+~~~
+
+The ten exact class mappings, USDA provenance, default servings, formula, and limits
+are documented in [the nutrition layer guide](docs/NUTRITION.md).
 
 ## Documentation
 
@@ -65,6 +77,7 @@ the next work; it is not implemented yet.
 - [Architecture](docs/ARCHITECTURE.md)
 - [Dataset layer](docs/DATASET.md)
 - [ML pipeline and training](docs/ML_PIPELINE.md)
+- [Nutrition data layer](docs/NUTRITION.md)
 
 The detailed documents record the verified sample counts, class mapping, transforms,
 DataLoader configuration, limitations, implementation decisions, and next phase.

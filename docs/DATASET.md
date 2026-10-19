@@ -117,5 +117,5 @@ kept in Git; local data is re-created when needed.
   perceptual near-duplicates.
 - The current subset is a development choice and does not represent all 101 classes.
 
-These limitations must be addressed in later model evaluation and nutrition-layer
-design. No nutrition mapping is implemented in Phase 2.
+Nutrition mapping is implemented separately in Phase 4. A representative USDA
+record and default serving do not remove the class and portion ambiguities above.
