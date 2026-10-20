@@ -2,21 +2,20 @@
 
 ## Purpose and boundary
 
-Phase 4 maps an exact classifier label to one representative USDA FoodData Central
-(FDC) record, then scales that record for a default serving or a portion the user
-selects. It is a local data layer; it does not load the image model and has no
-PyTorch dependency.
+The local catalog maps each exact classifier label to a sourced representative
+nutrition record, then scales it for a default serving or a portion the user selects.
+It does not load the image model and has no PyTorch dependency.
 
 The class identifiers must match the current classifier labels exactly:
 `pizza`, `hamburger`, `sushi`, `steak`, `ice_cream`, `donuts`, `omelette`,
-`french_fries`, `chicken_wings`, and `spaghetti_bolognese`. Lookup uses the string
+`french_fries`, `chicken_wings`, `spaghetti_bolognese`, `borek`, `kebap`, and `sarma`. Lookup uses the string
 identifier, never the order of catalog entries or a guessed class index. Coverage
 verification reads the existing class tuple from `ml/src/dataset.py` without
 importing or executing the model code.
 
 ## USDA records and serving references
 
-`nutrition/data/foods.json` is schema version 1, catalog version 1.0.0. Nutrients
+`nutrition/data/foods.json` is schema version 1, catalog version 1.1.0. Nutrients
 are the USDA values per 100 g: energy in kcal and protein, carbohydrates, and fat
 in grams. Every entry includes its exact FDC record description and ID, data type,
 release, official record URL, retrieval date, default portion label and gram weight,
@@ -36,10 +35,26 @@ USDA archives, plus archive URLs and SHA-256 hashes, for offline auditing.
 | `french_fries` | 2709462 | Potato, french fries, restaurant | FNDDS 2021–2023 | 1 small fast food order — 110 g |
 | `chicken_wings` | 2706057 | Chicken wing, baked, broiled, or roasted, from raw | FNDDS 2021–2023 | 1 wing, any size — 35 g |
 | `spaghetti_bolognese` | 167680 | Restaurant, Italian, spaghetti with meat sauce | SR Legacy | 1 serving — 554 g |
+| `borek` | TürKomp 06.02.0040 | Börek, peynirli, dondurulmuş (cheese-filled, frozen) | TürKomp | 100 g reference portion |
+| `kebap` | 2706780 | Lamb shish kabob with vegetables, excluding potatoes | FNDDS 2021–2023 | 1 shishkabob — 202 g |
+| `sarma` | 2706621 | Stuffed grape leaves with beef and rice | FNDDS 2021–2023 | 1 roll — 21 g |
 
 The records were checked against USDA's official [FDC downloadable datasets](https://fdc.nal.usda.gov/download-datasets/): FNDDS 2021–2023 (published October 2024) and SR Legacy (April 2018, its final release). The local extract records the exact values and portion IDs used. FDC portion gram weights refer to edible material; for a bone-in wing, that means the portion weight is not the whole wing including refuse/bone. The named serving is a reference quantity, not a claim about the photographed food's weight.
 
 The hamburger record was explicitly selected as a representative proxy for the classifier label. It means a white bun with one small patty, without cheese or added toppings; it is not a generic value for all burgers. The pizza reference is thick-crust cheese pizza, sushi is not further specified (NFS), steak is sirloin with fat eaten unspecified, and the doughnut record also includes honey buns. The remaining record-specific assumptions are in each catalog entry's `mapping_notes`.
+
+Phase 5 adds three regional representative records. `kebap` uses USDA FNDDS record
+2706780 for lamb shish kebab with vegetables; it is a defensible kebab example, not
+an exact match for every kebap style. `sarma` uses USDA FNDDS record 2706621 for
+beef-and-rice stuffed grape leaves; vegetarian and other fillings differ. Börek uses
+TürKomp record 06.02.0040, a frozen cheese-filled börek. TürKomp does not publish a
+household portion in the checked record, so its default is a transparent 100 g
+reference portion. The source URL and retrieval record are kept in `foods.json` and
+the selected evidence is in `phase5_source_extracts.json`.
+
+The added per-100 g values are: börek 288 kcal, 6.73 g protein, 32.34 g
+carbohydrates, 13.87 g fat; kebap 162 kcal, 12.0 g protein, 5.06 g carbohydrates,
+10.3 g fat; sarma 228 kcal, 8.15 g protein, 11.3 g carbohydrates, 17.0 g fat.
 
 ## Portion calculation
 
@@ -89,4 +104,9 @@ laboratory measurement of the photographed meal. One label also cannot describe 
 mixed plate. USDA source portions vary by record and are references; a future app
 should make the portion visible and editable before treating an estimate as a user's
 meal record. No API, mobile interface, food log, calorie goal, dashboard, or local
-food class expansion is part of this phase.
+food class expansion is part of Phase 4. The Phase 5 image-to-nutrition pipeline
+keeps classifier confidence informational: it never multiplies nutrition by
+confidence and never estimates portion weight from the image. It uses the configured
+default serving until a later UI lets a user adjust the portion. The Phase 5
+classifier has no unknown/out-of-distribution class, so unrelated images can still
+be assigned to a supported label; confidence does not prove the food is supported.

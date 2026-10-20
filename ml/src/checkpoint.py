@@ -52,7 +52,7 @@ def _validate_metadata(checkpoint: dict, expected_classes: tuple[str, ...]) -> M
         raise ValueError(f"Invalid checkpoint configuration: {error}") from error
     classes = list(expected_classes)
     if checkpoint["classes"] != classes or list(data_config.classes) != classes:
-        raise ValueError("Checkpoint class order differs from the expected Phase 2 class order")
+        raise ValueError("Checkpoint class order differs from the expected class order")
     if checkpoint["class_to_idx"] != {name: index for index, name in enumerate(classes)}:
         raise ValueError("Checkpoint class_to_idx is inconsistent with its ordered classes")
     if model_config.num_classes != len(classes):
@@ -99,7 +99,7 @@ def save_checkpoint(
         "model_state_dict": {name: value.detach().cpu() for name, value in model.state_dict().items()},
         "optimizer_state_dict": optimizer.state_dict(),
     }
-    _validate_metadata(checkpoint, DEVELOPMENT_CLASSES)
+    _validate_metadata(checkpoint, tuple(data_config.classes))
     path = Path(path).expanduser()
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False) as handle:

@@ -8,9 +8,9 @@ from torch import nn
 from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
 
 if __package__:
-    from .dataset import DEVELOPMENT_CLASSES
+    from .dataset import DEVELOPMENT_CLASSES, PHASE5_CLASSES
 else:
-    from dataset import DEVELOPMENT_CLASSES
+    from dataset import DEVELOPMENT_CLASSES, PHASE5_CLASSES
 
 
 MODEL_NAME = "efficientnet_b0"
@@ -24,8 +24,8 @@ class ModelConfig:
     dropout: float = 0.2
 
     def __post_init__(self) -> None:
-        if self.num_classes != len(DEVELOPMENT_CLASSES):
-            raise ValueError("Phase 3 requires the existing ten development classes")
+        if self.num_classes not in {len(DEVELOPMENT_CLASSES), len(PHASE5_CLASSES)}:
+            raise ValueError("EfficientNet-B0 supports the Phase 3 ten-class or Phase 5 thirteen-class head")
         if not isinstance(self.pretrained, bool):
             raise ValueError("pretrained must be a boolean")
         if not 0 <= self.dropout < 1:

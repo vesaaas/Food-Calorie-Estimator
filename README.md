@@ -8,11 +8,12 @@ labels to representative nutrition estimates with adjustable portion calculation
 - Phase 1 — Project Setup: complete
 - Phase 2 — Dataset & Preprocessing: complete and verified
 - Phase 3 — Complete: trained classifier, final held-out evaluation, and single-image inference
-- Phase 4 — In progress: Nutrition and Calorie Data Layer
+- Phase 4 — COMPLETE: Nutrition and Calorie Data Layer
+- Phase 5 — COMPLETE: regional food classes and image-to-nutrition integration
 
-Food-101 supports classification only. Phase 4 adds a separate local nutrition
-catalog sourced from USDA FoodData Central. Class recognition does not measure food
-weight; calorie and macro estimates use a default or user-selected portion.
+Food-101 supports classification only. The nutrition catalog is a separate sourced
+layer. Classification does not measure food weight; estimates use a configured
+default or a portion selected by the user.
 
 ## Setup
 
@@ -69,6 +70,34 @@ python nutrition/src/verify_nutrition.py
 
 The ten exact class mappings, USDA provenance, default servings, formula, and limits
 are documented in [the nutrition layer guide](docs/NUTRITION.md).
+
+## Phase 5 local food support and image-to-nutrition
+
+Phase 5 adds three Turkish regional classes to the existing ten-class label order:
+`borek`, `kebap`, and `sarma`. Source label `yaprak_sarma` maps explicitly to
+`sarma`. The pinned TurkishFoods-25 repository and preparation commands are
+documented in [the dataset guide](docs/DATASET.md). Once requirements are installed:
+
+~~~bash
+python ml/src/download_phase5_dataset.py
+python -m ml.src.verify_phase5
+python nutrition/src/verify_nutrition.py
+~~~
+
+The separate training and evaluation commands are `python ml/src/train_phase5.py`
+and `python ml/src/evaluate_phase5.py`. The mixed Phase 5 test result was 95.66%
+classification accuracy on 2,719 samples. The Phase 3 checkpoint and its frozen
+94.48% ten-class classification result remain historical and untouched.
+To run an image through the Phase 5 checkpoint and estimate the configured default
+serving, run:
+
+~~~bash
+python -m ml.src.phase5_pipeline path/to/meal.jpg
+~~~
+
+Confidence is informational and does not scale nutrition or estimate portion size.
+The classifier has no unknown-food class; unrelated images may still be assigned to
+one of its 13 labels.
 
 ## Documentation
 

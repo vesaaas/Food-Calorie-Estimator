@@ -119,3 +119,24 @@ kept in Git; local data is re-created when needed.
 
 Nutrition mapping is implemented separately in Phase 4. A representative USDA
 record and default serving do not remove the class and portion ambiguities above.
+
+## Phase 5 regional source and data integration
+
+Phase 5 uses the public [TurkishFoods-25 dataset](https://huggingface.co/datasets/yunusserhat/TurkishFoods-25), pinned to immutable revision `3e5026a17d14df81a25f0b6cdb16a58301fbb83c` (Apache-2.0). Its Dataset API exposes an `image` column and a named ClassLabel column with official `train` (9,168), `eval` (1,146), and `test` (1,147) splits. The exporter checks these split sizes and class names before use; it never infers labels from directory order.
+
+Only source classes `borek`, `kebap`, and `yaprak_sarma` are retained. The explicit source-to-project mapping is `borek → borek`, `kebap → kebap`, `yaprak_sarma → sarma`. Other 22 source classes are discarded. Source split names map directly to Phase 5 train, validation, and test; source test examples are never used for training or model selection. A manifest records the revision, license, source and exported counts per class/split, row indices, mapping, file hashes, and decoded-pixel hashes. Export refuses to overwrite an existing preparation. Duplicate image contents are excluded across source splits (test split has priority), and pipeline construction checks image-content overlap with the selected Food-101 splits. Local data are stored under the Git-ignored `ml/data/local_foods/` directory.
+
+Prepare data after installing `requirements.txt`:
+
+~~~bash
+python ml/src/download_phase5_dataset.py
+~~~
+
+The verified export retained 609 börek, 682 kebap, and 393 sarma training images;
+70, 80, and 50 validation images; and 78, 82, and 59 test images, respectively.
+The selected source rows before duplicate removal were 613/706/395 for train,
+71/82/50 for validation, and 78/83/59 for test. Thirty-four repeated-content rows
+were omitted: 26 duplicates occurred within a split and eight would have crossed
+splits. For cross-split matches, priority is test, then validation, then train, so
+test content never migrates into training or validation. The manifest records both
+source and exported counts and every exclusion.

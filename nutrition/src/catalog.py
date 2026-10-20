@@ -84,23 +84,36 @@ class NutritionCatalog:
             for key in ("label", "basis"):
                 _text(serving, key, f"{food_id}.default_serving")
             finite_number(serving.get("grams"), f"{food_id}.default_serving.grams", positive=True)
-            _positive_id(serving, "source_portion_id", f"{food_id}.default_serving")
+            if serving.get("source_portion_id") is not None:
+                _positive_id(serving, "source_portion_id", f"{food_id}.default_serving")
             source = _object(food.get("nutrition_source"), f"{food_id}.nutrition_source")
-            for key in ("provider", "data_type", "record_description", "url", "retrieved_on", "release", "download_url"):
+            for key in ("provider", "record_description", "url", "retrieved_on", "release"):
                 _text(source, key, f"{food_id}.nutrition_source")
-            _positive_id(source, "fdc_id", f"{food_id}.nutrition_source")
-            if source["provider"] != "USDA FoodData Central":
-                raise ValueError(f"{food_id}: expected USDA FoodData Central provenance")
-            if source["data_type"] not in {"Survey (FNDDS)", "SR Legacy"}:
-                raise ValueError(f"{food_id}: unsupported USDA data type")
             if source["record_description"] != food["reference_description"]:
                 raise ValueError(f"{food_id}: source and reference descriptions differ")
-            for key in ("url", "download_url"):
-                url = urlparse(source[key])
-                if url.scheme != "https" or url.netloc != "fdc.nal.usda.gov":
-                    raise ValueError(f"{food_id}: {key} must reference official USDA FDC HTTPS")
-            if source["url"] != f"https://fdc.nal.usda.gov/food-details/{source['fdc_id']}/nutrients":
-                raise ValueError(f"{food_id}: source URL does not match fdc_id")
+            url = urlparse(source["url"])
+            if url.scheme != "https":
+                raise ValueError(f"{food_id}: source URL must use HTTPS")
+            if source["provider"] == "USDA FoodData Central":
+                if serving.get("source_portion_id") is None:
+                    raise ValueError(f"{food_id}: USDA default_serving requires source_portion_id")
+                for key in ("data_type", "download_url"):
+                    _text(source, key, f"{food_id}.nutrition_source")
+                _positive_id(source, "fdc_id", f"{food_id}.nutrition_source")
+                if source["data_type"] not in {"Survey (FNDDS)", "SR Legacy"}:
+                    raise ValueError(f"{food_id}: unsupported USDA data type")
+                archive = urlparse(source["download_url"])
+                if archive.scheme != "https" or archive.netloc != "fdc.nal.usda.gov":
+                    raise ValueError(f"{food_id}: download_url must reference official USDA FDC HTTPS")
+                if url.netloc != "fdc.nal.usda.gov" or source["url"] != f"https://fdc.nal.usda.gov/food-details/{source['fdc_id']}/nutrients":
+                    raise ValueError(f"{food_id}: source URL does not match official FDC record ID")
+            elif source["provider"] == "TürKomp Turkish Food Composition Database":
+                _text(source, "data_type", f"{food_id}.nutrition_source")
+                _text(source, "source_record_id", f"{food_id}.nutrition_source")
+                if url.netloc != "turkomp.tarimorman.gov.tr":
+                    raise ValueError(f"{food_id}: TürKomp source URL must use its official domain")
+            else:
+                raise ValueError(f"{food_id}: unsupported nutrition provider {source['provider']!r}")
             try:
                 if date.fromisoformat(source["retrieved_on"]).isoformat() != source["retrieved_on"]:
                     raise ValueError()

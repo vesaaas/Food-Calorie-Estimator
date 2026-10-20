@@ -8,13 +8,13 @@
 | Phase 2 | Food-101 dataset and preprocessing | COMPLETE |
 | Phase 3 | EfficientNet-B0 classification, evaluation, and image inference | COMPLETE |
 | Phase 4 | USDA nutrition catalog and portion calculations | COMPLETE |
-| Phase 5 | Local foods and full image-to-nutrition integration | PLANNED |
+| Phase 5 | Local foods and full image-to-nutrition integration | COMPLETE |
 | Phase 6 | Editable portions, daily log, goals, and dashboards | PLANNED |
 | Phase 7 | Mobile experience, final validation, and release | PLANNED |
 
 Phases 1–4 are complete. Phase 4 built an independent nutrition data layer for the
-current ten classifier labels. The later phases below make the remaining project
-assignment requirements explicit; they are not Phase 4 work.
+original ten labels. Phase 5 has trained and evaluated its separate model and passed
+end-to-end verification. Later phases remain planned.
 
 ## Phase 2 — Complete
 
@@ -45,18 +45,24 @@ implemented and verified synthetically. Detailed historical results remain in
 - Keep this layer independent of PyTorch, classifier confidence, image-weight
   estimation, and application interfaces.
 
-## Future work — Planned
+## Phase 5 — Local foods and image-to-nutrition integration (COMPLETE)
 
-### Local food support and image-to-nutrition integration
+- Use the pinned TurkishFoods-25 source and its predefined `train`, `eval`, and
+  `test` splits; retain only `borek`, `kebap`, and `yaprak_sarma`.
+- Explicitly map source `yaprak_sarma` to canonical classifier label `sarma`.
+- Preserve the first ten Phase 3 class labels/order, append `borek`, `kebap`,
+  `sarma`, and train a separate 13-class EfficientNet-B0 using both datasets.
+- Transfer compatible Phase 3 backbone weights only; initialize the expanded head
+  for 13 outputs. Keep the Phase 3 checkpoint and frozen 94.48% result intact.
+- Extend the versioned nutrition catalog with sourced regional references and
+  provenance. Integrate image → prediction → exact nutrition lookup → default
+  serving. Confidence remains informational; no image-based portion estimate.
+- Exported data, training, separate evaluation, nutrition extension, and offline and
+  image-to-nutrition checks succeeded. The 2,719-sample mixed test result was 95.66%
+  accuracy (loss 0.17226); the report and per-class results are in
+  `docs/ML_PIPELINE.md`.
 
-- Collect and document a local dish dataset and classes, with appropriate usage
-  rights, labels, and validation data.
-- Extend the classifier and its training/evaluation pipeline to recognize local
-  foods; define versioned class mappings and validation before adding local-food
-  nutrition entries.
-- Integrate image prediction → exact food mapping → nutrition lookup into the
-  application flow. Keep class confidence separate from nutrition values and provide
-  a useful response for unsupported/uncertain foods.
+## Later phases — Planned
 
 ### Meal portions, log, and progress
 
@@ -73,5 +79,6 @@ implemented and verified synthetically. Detailed historical results remain in
   logging, goals, and daily/weekly summaries.
 - Harden, document, and deliver the final release.
 
-Phase 5–7 sequencing may be refined during implementation, but all listed assignment
-requirements remain future work until then.
+The later phases still include editable portion UI, daily meal log, personal daily
+calorie goal, daily and weekly dashboards, mobile experience, and final
+validation/release. Do not begin them as part of Phase 5.

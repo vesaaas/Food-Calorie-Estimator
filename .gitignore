@@ -9,6 +9,7 @@ __pycache__/
 # ML datasets
 ml/data/raw/
 ml/data/processed/
+ml/data/local_foods/
 
 # ML artifacts
 ml/artifacts/

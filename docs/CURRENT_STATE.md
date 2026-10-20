@@ -11,8 +11,9 @@ Phase 3 — COMPLETE. EfficientNet-B0 training, validation-based checkpoint
 selection, one-time final held-out evaluation, and single-image inference are
 implemented and verified. The official test results are final and must not be used
 for further model selection. Phase 4 — COMPLETE. Nutrition lookup and portion
-calculation are implemented for the existing ten classes. There is no mobile implementation, image-weight estimation, meal log,
-calorie goal, dashboard, or local-food classifier extension yet.
+calculation are implemented for the original ten classes and extended with three
+regional records in Phase 5. Phase 5 is COMPLETE. There is no mobile
+implementation, image-weight estimation, meal log, calorie goal, or dashboard yet.
 
 ## Environment and dependencies
 
@@ -26,7 +27,8 @@ calorie goal, dashboard, or local-food classifier extension yet.
 - The development Mac supports MPS; availability depends on the execution environment.
   The Phase 3 sandbox smoke run used CPU; an approved run outside the sandbox
   automatically selected MPS and passed the same one-batch checks. CUDA is unavailable.
-- requirements.txt is pinned; the Phase 3 foundation adds no dependencies.
+- Phase 5 pins Hugging Face `datasets==5.0.1` for the reproducible TurkishFoods-25
+  Dataset API integration.
 
 ## Repository structure
 
@@ -37,7 +39,8 @@ food-calorie-estimator/
 │   ├── CURRENT_STATE.md
 │   ├── ARCHITECTURE.md
 │   ├── DATASET.md
-│   └── ML_PIPELINE.md
+│   ├── ML_PIPELINE.md
+│   └── NUTRITION.md
 ├── ml/
 │   ├── data/
 │   │   ├── raw/                 # Git-ignored Food-101 archive and extraction
@@ -46,6 +49,12 @@ food-calorie-estimator/
 │   ├── artifacts/              # Git-ignored generated model checkpoints
 │   └── src/
 │       ├── download_dataset.py
+│       ├── download_phase5_dataset.py
+│       ├── phase5_data.py
+│       ├── train_phase5.py
+│       ├── evaluate_phase5.py
+│       ├── phase5_pipeline.py
+│       ├── verify_phase5.py
 │       ├── dataset.py
 │       ├── preprocessing.py
 │       ├── explore_dataset.py
@@ -63,8 +72,9 @@ food-calorie-estimator/
 │       └── verify_inference.py
 ├── mobile/
 ├── nutrition/
-│   ├── data/foods.json          # Versioned ten-class USDA FDC catalog
+│   ├── data/foods.json          # Versioned thirteen-class nutrition catalog
 │   ├── data/usda_source_extracts.json  # Selected USDA rows and archive hashes
+│   ├── data/phase5_source_extracts.json  # Regional nutrition source extracts
 │   └── src/                     # Catalog validation, portion calculator, CLI, verification
 ├── README.md
 ├── requirements.txt
@@ -226,8 +236,9 @@ still receive one of those ten labels.
 
 ## Phase 4 nutrition layer — COMPLETE
 
-- `nutrition/data/foods.json` contains a versioned catalog for exactly the ten
-  current classifier labels. Each row records USDA FDC ID, source type/release,
+- `nutrition/data/foods.json` originally contained the ten Phase 3 mappings and now
+  contains those unchanged mappings plus three Phase 5 regional entries. Each row
+  records source type/release,
   reference description, retrieval date, four per-100 g nutrients, and a source-backed
   default serving/portion ID.
 - `nutrition/data/usda_source_extracts.json` preserves the selected USDA nutrient and
@@ -236,16 +247,36 @@ still receive one of those ten labels.
   optional exact class coverage. `calculator.py` scales from per-100 g values by a
   default serving, explicit grams, or serving multiplier. `estimate.py` provides the
   CLI. The core does not import PyTorch or depend on classifier confidence.
-- `nutrition/src/verify_nutrition.py` runs 15 offline checks, including all ten
-  classifier labels, USDA evidence, errors, calculations, non-mutation, CLI behavior,
+- `nutrition/src/verify_nutrition.py` runs offline checks for all thirteen
+  classifier labels, USDA/TürKomp evidence, errors, calculations, non-mutation, CLI behavior,
   and no-PyTorch import.
 - Food weight is not measured from an image. Broad class mappings are representative
   estimates with preparation and recipe limitations.
 
-## Next work
+## Phase 5 — COMPLETE
 
-Phase 4 is complete. Next, plan the local-dish dataset and classifier extension,
-image-to-nutrition integration, editable portion UI, daily log, personal calorie
-goal, daily and weekly dashboards, mobile experience, and final validation/release.
-Preserve the selected checkpoint and keep the frozen final held-out result out of
-model-selection decisions.
+- The source is TurkishFoods-25 pinned to revision
+  `3e5026a17d14df81a25f0b6cdb16a58301fbb83c`, with named classes and official
+  train/eval/test splits. Only `borek`, `kebap`, and `yaprak_sarma` are retained;
+  the latter maps explicitly to canonical `sarma`.
+- The final label order retains the Phase 3 ten labels and appends `borek`, `kebap`,
+  `sarma`. The separate model initialization copies Phase 3 EfficientNet feature
+  weights only and creates a fresh 13-output head. It trained five epochs on MPS;
+  epoch 5 was selected at 92.24% validation accuracy.
+- Exported train counts are 609 börek, 682 kebap, 393 sarma; validation counts are
+  70, 80, 50; test counts are 78, 82, 59. Thirty-four repeated-content rows were
+  excluded: 26 within-split duplicates and eight potential cross-split leaks. Test
+  content took priority over validation, which took priority over training.
+- The independent mixed test result is 0.17226 loss and 95.66% accuracy on 2,719
+  samples. Per-class results are recorded in `docs/ML_PIPELINE.md` and the ignored
+  `ml/artifacts/phase5_mixed_test.json` report.
+- The real single-image pipeline predicted a source sarma test image and produced
+  its catalog default serving and macros. Offline verifiers passed; Phase 3 model
+  and evaluation artifact hashes remain unchanged.
+
+## Later work
+
+Phase 6 remains editable portions, daily meal log, personal calorie goal, and daily
+and weekly dashboards. Phase 7 remains mobile experience and final
+validation/release. Do not start these as part of Phase 5. Preserve the Phase 3
+checkpoint and keep its frozen held-out result out of Phase 5 model selection.

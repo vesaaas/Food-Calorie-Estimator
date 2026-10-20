@@ -400,10 +400,89 @@ does no metric evaluation, and takes no optimizer steps.
 The classifier recognizes only the configured ten classes and has no explicit
 unknown or out-of-distribution class. Phase 3 is COMPLETE. Its 94.48% held-out
 result is classification accuracy only, not nutrition or calorie-estimation accuracy;
-it remains frozen and was not rerun during Phase 4.
+it remains frozen and was not rerun during Phase 4 or Phase 5.
 
 Phase 4 adds a separate USDA FDC lookup and portion calculator for the existing ten
 labels. It does not change checkpoint classes, model code, confidence, or inference.
 See `docs/NUTRITION.md` for sources, default portions, calculations, and limitations.
-Future local-dish training and image-to-nutrition application integration remain
+Phase 5 has added a separate 13-class classifier and image-to-nutrition integration;
+mobile application flow, editable portions, logging, goals, and dashboards remain
 planned.
+
+## Phase 5 — regional 13-class model and integration (COMPLETE)
+
+Phase 5 preserves the Phase 3 classifier and checkpoint. Its class order is the
+original ten labels followed by `borek`, `kebap`, and `sarma`. The source label
+`yaprak_sarma` is mapped explicitly to `sarma`. See `docs/DATASET.md` for the pinned
+TurkishFoods-25 revision, source split rules, and manifest format.
+
+`download_phase5_dataset.py` exports only the three selected classes to ignored
+local data. `phase5_data.py` combines them with the established Food-101 train and
+validation subsets and official test subset. It preserves TurkishFoods-25 train,
+eval, and test, verifies manifests and hashes, rejects content leakage across local
+splits, and checks content overlap between the two datasets. Validation drives model
+selection. The independent mixed test split is used only by `evaluate_phase5.py`.
+
+Training creates EfficientNet-B0 with a fresh 13-output head, then copies only
+shape-compatible `features.*` weights from the saved Phase 3 model. No Phase 3
+classifier weights are loaded. All layers are fine-tuned with the existing 224×224
+transforms and AdamW settings. The model trains on both datasets. Inverse-frequency
+class weights `N / (13 × n_class)` normalized to mean 1 address actual class
+imbalance without duplicating images. The separate checkpoint is
+`ml/artifacts/efficientnet_b0_phase5_best.pt`; the result report is
+`ml/artifacts/phase5_mixed_test.json`. Neither overwrites Phase 3 artifacts.
+
+Run after dataset preparation:
+
+~~~bash
+python ml/src/train_phase5.py --epochs 5 --batch-size 16 --device auto
+python ml/src/evaluate_phase5.py --device auto
+python -m ml.src.phase5_pipeline path/to/meal.jpg
+~~~
+
+The five-epoch MPS run selected epoch 5 at 92.24% validation accuracy. Epoch-level
+metrics were:
+
+| Epoch | Train loss | Train accuracy | Validation loss | Validation accuracy |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.3762 | 89.21% | 0.2975 | 91.82% |
+| 2 | 0.1465 | 95.72% | 0.3026 | 91.35% |
+| 3 | 0.1197 | 96.45% | 0.3116 | 91.76% |
+| 4 | 0.0942 | 96.95% | 0.3107 | 91.59% |
+| 5 | 0.0722 | 97.80% | 0.2970 | **92.24% (best)** |
+
+The independent Phase 5 mixed test run evaluated all 2,500 official Food-101 test
+images and 219 TurkishFoods-25 test images (2,719 total). Loss was 0.17226 and
+overall accuracy was 95.66%. Per-class results:
+
+| Class | Correct / total | Accuracy |
+| --- | ---: | ---: |
+| pizza | 245 / 250 | 98.00% |
+| hamburger | 231 / 250 | 92.40% |
+| sushi | 235 / 250 | 94.00% |
+| steak | 230 / 250 | 92.00% |
+| ice_cream | 234 / 250 | 93.60% |
+| donuts | 245 / 250 | 98.00% |
+| omelette | 230 / 250 | 92.00% |
+| french_fries | 245 / 250 | 98.00% |
+| chicken_wings | 245 / 250 | 98.00% |
+| spaghetti_bolognese | 247 / 250 | 98.80% |
+| borek | 76 / 78 | 97.44% |
+| kebap | 80 / 82 | 97.56% |
+| sarma | 58 / 59 | 98.31% |
+
+This is a mixed-dataset classification result, not nutrition-estimation accuracy.
+Phase 3's frozen 94.48% remains its historical ten-class Food-101 classification
+accuracy. Phase 5 results did not guide Phase 3 selection. The report, including
+confusion matrix and dataset counts, is `ml/artifacts/phase5_mixed_test.json`.
+
+## Phase 5 image-to-nutrition behavior
+
+The reusable `ImageNutritionPipeline` loads and validates the separate 13-class
+checkpoint, applies the established deterministic image transform, returns a
+canonical label and confidence, and performs exact Phase 4 catalog lookup. The
+primary nutrition result uses the configured default serving. Confidence is
+informational and is never multiplied into nutrients; no portion weight is inferred
+from an image. The model has no unknown class, so unrelated images may still be
+forced into one of the 13 supported labels. See `docs/NUTRITION.md` for the regional
+nutrition record limitations.

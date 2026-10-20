@@ -7,16 +7,33 @@ Food image
     ↓
 Image preprocessing
     ↓
-Food classification model       ← Phase 3
+13-class EfficientNet-B0       ← Phase 5 (separate from frozen Phase 3)
     ↓
-Predicted Food-101 class
+Predicted canonical class + informational confidence
     ↓
-Nutrition/calorie data layer    ← Phase 4
+Exact nutrition lookup + default serving
     ↓
-Application/API/mobile layer    ← Phases 5–6
+Calories and macronutrients    ← Phases 4–5
+    ↓
+Editable portion and app flow  ← later phase
 ~~~
 
 ## Responsibilities
+
+### Phase 5 classifier and nutrition integration
+
+Phase 5 keeps the Phase 3 ten-class checkpoint intact. It creates a separate
+13-class EfficientNet-B0 checkpoint, initializes only its compatible `features.*`
+parameters from the Phase 3 checkpoint, and leaves the new 13-output head freshly
+initialized. Training combines the existing Food-101 development split with the
+three selected TurkishFoods-25 labels. The source `train`, `eval`, and `test` splits
+remain separate; `yaprak_sarma` is explicitly mapped to canonical `sarma`.
+
+The image-to-nutrition pipeline reuses the existing RGB transforms, predictor,
+checkpoint validation, and Phase 4 exact catalog lookup. It returns classifier
+confidence independently from the nutrition result. Confidence never scales
+calories/macros and image pixels do not yield portion grams; the catalog default is
+used until a user-selected amount is available. This classifier has no unknown class.
 
 ### Image input
 
@@ -71,8 +88,10 @@ scaling; `estimate.py` exposes a small CLI. This layer has no PyTorch dependency
 The class ID is the classifier's exact label string. It does not infer the class from
 confidence, class array position, or a fuzzy name match.
 
-FDC per-100 g energy, protein, carbohydrate, and total fat values form the canonical
-basis. Each record supplies a default serving weight and source portion ID. The
+Per-100 g energy, protein, carbohydrate, and total fat values form the canonical
+basis. Each record supplies a default serving weight with its source or documented
+reference basis. USDA records include source portion IDs where available; the
+TürKomp börek entry uses a 100 g reference amount. The
 calculator accepts the default, explicit grams, or a serving multiplier. Classifier
 confidence never scales nutrition values. Image classification does not estimate
 portion mass; it must be selected or entered by a user. The selected USDA entry is a
@@ -83,8 +102,9 @@ or photographed meal. See `docs/NUTRITION.md` for record-level provenance and li
 
 Later phases may expose inference through an API and connect it to the mobile
 application. Those components should consume a model prediction and nutrition lookup result
-through stable interfaces. The mobile/ directory remains a placeholder; the
-nutrition/ directory now contains the Phase 4 catalog and calculator.
+through stable interfaces. The mobile/ directory remains a placeholder;
+nutrition/ contains the catalog and calculator, and Phase 5 provides a reusable
+image-to-nutrition pipeline and CLI.
 
 ## Phase 2 boundary
 

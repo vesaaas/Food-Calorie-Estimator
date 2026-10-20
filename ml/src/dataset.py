@@ -25,6 +25,8 @@ DEVELOPMENT_CLASSES = (
     "pizza", "hamburger", "sushi", "steak", "ice_cream", "donuts",
     "omelette", "french_fries", "chicken_wings", "spaghetti_bolognese",
 )
+REGIONAL_CLASSES = ("borek", "kebap", "sarma")
+PHASE5_CLASSES = DEVELOPMENT_CLASSES + REGIONAL_CLASSES
 
 
 @dataclass(frozen=True)

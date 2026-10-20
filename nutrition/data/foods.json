@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": "1.0.0",
+  "catalog_version": "1.1.0",
   "foods": [
     {
       "food_id": "pizza",
@@ -280,6 +280,89 @@
         "retrieved_on": "2026-10-19",
         "release": "SR Legacy April 2018",
         "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_json_2018-04.zip"
+      }
+    },
+    {
+      "food_id": "borek",
+      "display_name": "Börek",
+      "reference_description": "Börek, peynirli, dondurulmuş",
+      "mapping_notes": "Turkish national composition record for frozen cheese-filled börek; this is a culturally close but specific proxy for the dataset’s broad borek class. Fresh börek and other fillings/recipes vary.",
+      "per_100g": {
+        "energy_kcal": 288,
+        "protein_g": 6.73,
+        "carbohydrates_g": 32.34,
+        "fat_g": 13.87
+      },
+      "default_serving": {
+        "label": "100 g reference portion",
+        "grams": 100,
+        "basis": "Project reference amount; TürKomp reports the composition per 100 g and does not provide a household portion for this entry.",
+        "source_portion_id": null
+      },
+      "nutrition_source": {
+        "provider": "TürKomp Turkish Food Composition Database",
+        "source_record_id": "06.02.0040",
+        "data_type": "Turkish national food composition record",
+        "record_description": "Börek, peynirli, dondurulmuş",
+        "url": "https://turkomp.tarimorman.gov.tr/food-borek-peynirli-dondurulmus-752",
+        "retrieved_on": "2026-10-20",
+        "release": "TürKomp current database as accessed 2026-10-20"
+      }
+    },
+    {
+      "food_id": "kebap",
+      "display_name": "Kebap",
+      "reference_description": "Lamb shish kabob with vegetables, excluding potatoes",
+      "mapping_notes": "USDA lamb shish kabob with vegetables, excluding potatoes; a lamb-and-vegetable kebab proxy. Other meats, styles, and accompaniments vary.",
+      "per_100g": {
+        "protein_g": 12.0,
+        "fat_g": 10.3,
+        "carbohydrates_g": 5.06,
+        "energy_kcal": 162
+      },
+      "default_serving": {
+        "label": "1 shishkabob",
+        "grams": 202,
+        "basis": "USDA FNDDS source-provided portion; gram weight is the source household portion.",
+        "source_portion_id": 296178
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2706780,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Lamb shish kabob with vegetables, excluding potatoes",
+        "url": "https://fdc.nal.usda.gov/food-details/2706780/nutrients",
+        "retrieved_on": "2026-10-20",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
+      }
+    },
+    {
+      "food_id": "sarma",
+      "display_name": "Sarma",
+      "reference_description": "Stuffed grape leaves with beef and rice",
+      "mapping_notes": "USDA stuffed grape leaves with beef and rice; a meat-and-rice sarma proxy. Vegetarian, olive-oil, and other regional fillings differ.",
+      "per_100g": {
+        "protein_g": 8.15,
+        "fat_g": 17.0,
+        "carbohydrates_g": 11.3,
+        "energy_kcal": 228
+      },
+      "default_serving": {
+        "label": "1 roll",
+        "grams": 21,
+        "basis": "USDA FNDDS source-provided portion; gram weight is the source household portion.",
+        "source_portion_id": 295835
+      },
+      "nutrition_source": {
+        "provider": "USDA FoodData Central",
+        "fdc_id": 2706621,
+        "data_type": "Survey (FNDDS)",
+        "record_description": "Stuffed grape leaves with beef and rice",
+        "url": "https://fdc.nal.usda.gov/food-details/2706621/nutrients",
+        "retrieved_on": "2026-10-20",
+        "release": "FNDDS 2021-2023",
+        "download_url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip"
       }
     }
   ]

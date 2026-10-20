@@ -19,16 +19,35 @@ else:
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def classifier_labels() -> tuple[str, ...]:
-    """Read the literal ML class tuple without importing torch or executing ML code."""
+def classifier_labels(name: str = "PHASE5_CLASSES") -> tuple[str, ...]:
+    """Read a literal ML class tuple without importing torch or executing ML code."""
     tree = ast.parse((ROOT / "ml/src/dataset.py").read_text())
+    assignments = {}
     for statement in tree.body:
         if isinstance(statement, ast.Assign) and any(
-            isinstance(target, ast.Name) and target.id == "DEVELOPMENT_CLASSES"
+            isinstance(target, ast.Name) and target.id == name
             for target in statement.targets
         ):
-            return ast.literal_eval(statement.value)
-    raise AssertionError("DEVELOPMENT_CLASSES literal not found")
+            wanted = statement.value
+            break
+    else:
+        raise AssertionError(f"{name} literal not found")
+
+    for statement in tree.body:
+        if isinstance(statement, ast.Assign) and len(statement.targets) == 1 and isinstance(statement.targets[0], ast.Name):
+            assignments[statement.targets[0].id] = statement.value
+
+    def resolve(node):
+        if isinstance(node, ast.Name) and node.id in assignments:
+            return resolve(assignments[node.id])
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+            return resolve(node.left) + resolve(node.right)
+        return ast.literal_eval(node)
+
+    try:
+        return resolve(wanted)
+    except (ValueError, TypeError) as error:
+        raise AssertionError(f"{name} class definition must use literal tuples") from error
 
 
 class NutritionChecks(unittest.TestCase):
@@ -45,9 +64,13 @@ class NutritionChecks(unittest.TestCase):
         food["default_serving"]["grams"] = 150
         return NutritionCatalog(data)
 
-    def test_exact_ten_class_coverage(self):
+    def test_exact_thirteen_class_coverage_and_preserved_phase3_labels(self):
         labels = classifier_labels()
-        self.assertEqual(len(labels), 10)
+        phase3_labels = classifier_labels("DEVELOPMENT_CLASSES")
+        self.assertEqual(len(phase3_labels), 10)
+        self.assertEqual(labels[:10], phase3_labels)
+        self.assertEqual(labels[10:], ("borek", "kebap", "sarma"))
+        self.assertEqual(len(labels), 13)
         self.assertEqual(set(labels), set(self.catalog.food_ids))
         for label in labels:
             self.assertEqual(self.catalog.lookup(label)["food_id"], label)
@@ -186,17 +209,19 @@ class NutritionChecks(unittest.TestCase):
 
     def test_production_matches_offline_usda_evidence(self):
         proof = json.loads((DEFAULT_CATALOG.parent / "usda_source_extracts.json").read_text())
+        extra = json.loads((DEFAULT_CATALOG.parent / "phase5_source_extracts.json").read_text())
         records = {record["fdcId"]: record for record in proof["records"]}
-        self.assertEqual(len(records), 10)
+        records.update({record["fdcId"]: record for record in extra["fdc_records"]})
+        self.assertEqual(len(records), 12)
         names = {1008: "energy_kcal", 1003: "protein_g", 1005: "carbohydrates_g", 1004: "fat_g"}
-        for food_id in self.catalog.food_ids:
+        for food_id in (*classifier_labels("DEVELOPMENT_CLASSES"), "kebap", "sarma"):
             food = self.catalog.lookup(food_id)
             source = food["nutrition_source"]
             record = records[source["fdc_id"]]
             self.assertEqual(record["description"], source["record_description"])
             self.assertEqual(record["dataType"], source["data_type"])
-            self.assertEqual(source["retrieved_on"], proof["retrieved_on"])
-            self.assertIn(source["download_url"], [a["url"] for a in proof["archives"]])
+            self.assertEqual(source["retrieved_on"], extra["retrieved_on"] if food_id in {"kebap", "sarma"} else proof["retrieved_on"])
+            self.assertIn(source["download_url"], [a["url"] for a in proof["archives"] + extra["sources"]])
             values = {}
             for nutrient in record["foodNutrients"]:
                 nutrient_id = nutrient["nutrient"]["id"]
@@ -208,6 +233,28 @@ class NutritionChecks(unittest.TestCase):
             self.assertEqual(portion["gramWeight"], food["default_serving"]["grams"])
             label = portion.get("portionDescription", "1 " + portion.get("modifier", ""))
             self.assertEqual(label, food["default_serving"]["label"])
+
+    def test_regional_nutrition_entries_match_verified_sources(self):
+        expected = {
+            "borek": (288, 6.73, 32.34, 13.87),
+            "kebap": (162, 12.0, 5.06, 10.3),
+            "sarma": (228, 8.15, 11.3, 17.0),
+        }
+        for label, values in expected.items():
+            food = self.catalog.lookup(label)
+            actual = food["per_100g"]
+            self.assertEqual(tuple(actual[name] for name in NUTRIENTS), values)
+            grams = food["default_serving"]["grams"]
+            self.assertEqual(estimate(label, grams=100, catalog=self.catalog)["nutrients"], actual)
+            portion = estimate(label, catalog=self.catalog)
+            self.assertEqual(portion["portion_grams"], grams)
+            for key in NUTRIENTS:
+                self.assertAlmostEqual(portion["nutrients"][key], actual[key] * grams / 100)
+        borek = self.catalog.lookup("borek")
+        self.assertEqual(borek["nutrition_source"]["source_record_id"], "06.02.0040")
+        self.assertIsNone(borek["default_serving"]["source_portion_id"])
+        self.assertEqual(self.catalog.lookup("kebap")["nutrition_source"]["fdc_id"], 2706780)
+        self.assertEqual(self.catalog.lookup("sarma")["nutrition_source"]["fdc_id"], 2706621)
 
     def test_cli_and_offline_public_import_from_other_directory(self):
         cli = ROOT / "nutrition/src/estimate.py"
