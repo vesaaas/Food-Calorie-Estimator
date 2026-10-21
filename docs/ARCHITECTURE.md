@@ -11,11 +11,17 @@ Image preprocessing
     ↓
 Predicted canonical class + informational confidence
     ↓
-Exact nutrition lookup + default serving
+Exact nutrition lookup
     ↓
-Calories and macronutrients    ← Phases 4–5
+User-selected portion          ← Phase 6 domain service
     ↓
-Editable portion and app flow  ← later phase
+Calculated calories/macros     ← existing Phase 4 calculator
+    ↓
+Persisted meal + goal          ← Phase 6 services/repository
+    ↓
+Daily and weekly summaries     ← Phase 6 domain service
+    ↓
+Mobile UI, camera/gallery      ← Phase 7 (not implemented)
 ~~~
 
 ## Responsibilities
@@ -98,13 +104,34 @@ portion mass; it must be selected or entered by a user. The selected USDA entry 
 representative reference for a broad dish class, not an exact match to every recipe
 or photographed meal. See `docs/NUTRITION.md` for record-level provenance and limits.
 
-### Application, API, and mobile layers
+### Phase 6 application/domain layer
 
-Later phases may expose inference through an API and connect it to the mobile
-application. Those components should consume a model prediction and nutrition lookup result
-through stable interfaces. The mobile/ directory remains a placeholder;
-nutrition/ contains the catalog and calculator, and Phase 5 provides a reusable
-image-to-nutrition pipeline and CLI.
+`app/meal_log.py` turns an exact food ID and user-selected portion into a validated
+meal record by calling the existing nutrition calculator. It stores selected grams
+and computed nutrients, plus timestamp and optional informational classifier
+confidence. The confidence field is metadata only; the domain does not use it in
+nutrition calculations or portion selection.
+
+`app/repositories.py` defines the diary persistence protocol. `app/storage.py`
+implements that contract with validated, atomic JSON writes; meal and goal services
+depend on the protocol, not file operations. Missing storage means an empty diary.
+The JSON file under `app/data/` is generated runtime data and Git-ignored, so a
+future client can supply a SQLite or platform repository without rewriting domain
+services.
+
+`app/goals.py` validates and stores a positive finite daily calorie goal.
+`app/dashboard.py` provides pure daily and weekly aggregation plus repository-backed
+queries. Goal progress is a fraction and can exceed 1 when over goal; remaining
+calories become negative. With no goal, remaining/progress are `None`. A week is the
+inclusive seven calendar days ending on its requested date, including empty days as
+zero totals. UTC is the default timezone for assigning timestamps to days, and the
+services accept explicit timezones and clocks for deterministic use.
+
+Phase 6 is reusable Python/domain/application logic, not a terminal business flow.
+`app/verify_phase6.py` performs offline service and persistence verification. Phase
+7 is reserved for mobile UI/integration, camera/gallery, deployment strategy,
+physical Android testing, and APK/demo/release work. The `mobile/` directory remains
+a placeholder; no mobile application is implemented yet.
 
 ## Phase 2 boundary
 

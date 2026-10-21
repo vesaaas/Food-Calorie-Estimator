@@ -12,8 +12,11 @@ selection, one-time final held-out evaluation, and single-image inference are
 implemented and verified. The official test results are final and must not be used
 for further model selection. Phase 4 — COMPLETE. Nutrition lookup and portion
 calculation are implemented for the original ten classes and extended with three
-regional records in Phase 5. Phase 5 is COMPLETE. There is no mobile
-implementation, image-weight estimation, meal log, calorie goal, or dashboard yet.
+regional records in Phase 5. Phase 5 is COMPLETE. Phase 6 is COMPLETE and provides
+reusable Python domain logic for editable portions, meal logging, personal calorie
+goals, and daily/weekly summaries. Phase 7 mobile UI and device/release work have
+not started; the repository does not yet contain a mobile application or infer
+portion weight from images.
 
 ## Environment and dependencies
 
@@ -34,6 +37,14 @@ implementation, image-weight estimation, meal log, calorie goal, or dashboard ye
 
 ~~~text
 food-calorie-estimator/
+├── app/                       # Phase 6 domain/application services
+│   ├── models.py
+│   ├── repositories.py         # Persistence protocol
+│   ├── storage.py              # Atomic JSON repository adapter
+│   ├── meal_log.py
+│   ├── goals.py
+│   ├── dashboard.py
+│   └── verify_phase6.py
 ├── docs/
 │   ├── ROADMAP.md
 │   ├── CURRENT_STATE.md
@@ -274,9 +285,27 @@ still receive one of those ten labels.
   its catalog default serving and macros. Offline verifiers passed; Phase 3 model
   and evaluation artifact hashes remain unchanged.
 
-## Later work
+## Phase 6 — COMPLETE
 
-Phase 6 remains editable portions, daily meal log, personal calorie goal, and daily
-and weekly dashboards. Phase 7 remains mobile experience and final
-validation/release. Do not start these as part of Phase 5. Preserve the Phase 3
-checkpoint and keep its frozen held-out result out of Phase 5 model selection.
+- Meal creation supports catalog defaults, serving multipliers, and explicit grams
+  by calling `nutrition.src.calculator.estimate`; nutrition math is not duplicated.
+- Immutable `MealEntry` records preserve exact food ID, selected grams, calculated
+  nutrients, timezone-aware timestamp, portion mode, and optional classifier
+  confidence metadata. Confidence does not affect grams or nutrients.
+- `DiaryRepository` separates domain services from storage. The JSON adapter handles
+  missing initial files, validates loaded records, and writes atomically. Runtime
+  diary files under `app/data/` are Git-ignored.
+- Daily summaries include calories/macros, meal count, goal, remaining calories,
+  progress fraction, and over-goal state. Without a goal, goal-related values are
+  `None`; when over goal, remaining calories are negative and progress may exceed 1.
+- Weekly summaries use seven inclusive calendar dates ending on the requested date,
+  include zero-total empty days, and default to UTC day boundaries. Services accept
+  an explicit timezone and injectable clock for deterministic callers/tests.
+- `python -m app.verify_phase6` is the offline domain and persistence verifier.
+
+## Phase 7 — PLANNED
+
+Phase 7 will add mobile UI/integration, camera/gallery input, deployment strategy,
+physical Android testing, and APK/demo/release validation. It has not started.
+Preserve the Phase 3 checkpoint and keep its frozen held-out result out of future
+model selection.

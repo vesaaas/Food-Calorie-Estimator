@@ -16,3 +16,6 @@ ml/artifacts/
 *.pth
 *.pt
 *.ckpt
+
+# Generated user diary data
+app/data/

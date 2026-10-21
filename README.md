@@ -10,6 +10,8 @@ labels to representative nutrition estimates with adjustable portion calculation
 - Phase 3 — Complete: trained classifier, final held-out evaluation, and single-image inference
 - Phase 4 — COMPLETE: Nutrition and Calorie Data Layer
 - Phase 5 — COMPLETE: regional food classes and image-to-nutrition integration
+- Phase 6 — COMPLETE: editable portions, meal log, calorie goal, and summaries
+- Phase 7 — PLANNED: mobile experience, device testing, and release
 
 Food-101 supports classification only. The nutrition catalog is a separate sourced
 layer. Classification does not measure food weight; estimates use a configured
@@ -99,6 +101,26 @@ Confidence is informational and does not scale nutrition or estimate portion siz
 The classifier has no unknown-food class; unrelated images may still be assigned to
 one of its 13 labels.
 
+## Phase 6 domain services
+
+Phase 6 adds reusable Python application logic for editable portions, meal entries,
+a personal calorie goal, and daily/weekly summaries. It reuses the nutrition
+calculator; the JSON repository is only a replaceable persistence adapter. The
+default diary file is `app/data/diary.json` and is ignored by Git. Dashboard dates
+use UTC by default; a caller can supply another timezone. A week is the inclusive
+seven calendar days ending on the requested date.
+
+~~~bash
+python -m app.verify_phase6
+~~~
+
+Python services can create entries with default servings, a serving multiplier, or
+explicit grams. Classifier confidence may be stored as prediction metadata, but it
+does not affect nutrition or portion weight. Phase 6 is domain logic only. Phase 7
+will add the mobile UI and camera/gallery integration, deployment strategy, physical
+Android testing, and APK/demo/release work; this repository does not yet provide a
+mobile application.
+
 ## Documentation
 
 - [Roadmap](docs/ROADMAP.md)
@@ -107,6 +129,8 @@ one of its 13 labels.
 - [Dataset layer](docs/DATASET.md)
 - [ML pipeline and training](docs/ML_PIPELINE.md)
 - [Nutrition data layer](docs/NUTRITION.md)
+- Phase 6 services are described in [the architecture](docs/ARCHITECTURE.md) and
+  [current state](docs/CURRENT_STATE.md).
 
 The detailed documents record the verified sample counts, class mapping, transforms,
 DataLoader configuration, limitations, implementation decisions, and next phase.

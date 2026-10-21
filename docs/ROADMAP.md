@@ -9,12 +9,13 @@
 | Phase 3 | EfficientNet-B0 classification, evaluation, and image inference | COMPLETE |
 | Phase 4 | USDA nutrition catalog and portion calculations | COMPLETE |
 | Phase 5 | Local foods and full image-to-nutrition integration | COMPLETE |
-| Phase 6 | Editable portions, daily log, goals, and dashboards | PLANNED |
+| Phase 6 | Editable portions, daily log, goals, and dashboards | COMPLETE |
 | Phase 7 | Mobile experience, final validation, and release | PLANNED |
 
-Phases 1–4 are complete. Phase 4 built an independent nutrition data layer for the
-original ten labels. Phase 5 has trained and evaluated its separate model and passed
-end-to-end verification. Later phases remain planned.
+Phases 1–6 are complete. Phase 4 built an independent nutrition data layer for the
+original ten labels. Phase 5 trained and evaluated its separate model and passed
+end-to-end verification. Phase 6 adds reusable domain services for portions, meal
+logging, goals, and summaries. Phase 7 remains planned.
 
 ## Phase 2 — Complete
 
@@ -62,23 +63,31 @@ implemented and verified synthetically. Detailed historical results remain in
   accuracy (loss 0.17226); the report and per-class results are in
   `docs/ML_PIPELINE.md`.
 
-## Later phases — Planned
+## Phase 6 — Editable portions, meal log, goals, and dashboards (COMPLETE)
 
-### Meal portions, log, and progress
+- `app/meal_log.py` creates meal entries from exact nutrition catalog IDs using the
+  existing calculator for defaults, serving multipliers, or explicit grams.
+- `app/repositories.py` defines the persistence boundary; `app/storage.py` provides
+  validated atomic JSON storage, with missing initial storage treated as an empty
+  diary. Runtime diary data is Git-ignored.
+- `app/goals.py` stores a finite positive daily calorie goal. `app/dashboard.py`
+  provides daily and weekly nutrition totals, progress and goal-overage information.
+- The weekly interval is seven inclusive calendar dates ending on the requested
+  date. UTC is the default day boundary; callers may supply an explicit timezone.
+- `python -m app.verify_phase6` verifies portion modes, persistence, goals,
+  aggregation, malformed data handling, and confidence independence.
+- This phase is reusable Python/domain/application logic. It has no mobile UI and
+  does not infer portion weight from images.
 
-- Provide an editable portion interface using serving multipliers or user-entered
-  weight; do not infer weight from an image without a separately validated method.
-- Let users add and revisit meals in a daily log.
-- Let users set a personal daily calorie goal.
-- Build a daily calorie progress dashboard and weekly calorie progress dashboard.
+## Phase 7 — Mobile, device validation, and release (PLANNED)
 
-### Mobile, validation, and release
+- Implement the mobile experience for camera/gallery input, prediction and
+  confidence display, nutrition lookup, editable portion, meal logging, goal, and
+  daily/weekly progress.
+- Choose and implement the deployment/integration strategy without replacing the
+  verified Phase 5 PyTorch model blindly.
+- Perform physical Android testing, final end-to-end validation, and prepare the
+  APK/demo/release deliverables.
 
-- Implement the mobile meal-photo and nutrition experience.
-- Validate end-to-end behavior, local foods, nutrition provenance, portion editing,
-  logging, goals, and daily/weekly summaries.
-- Harden, document, and deliver the final release.
-
-The later phases still include editable portion UI, daily meal log, personal daily
-calorie goal, daily and weekly dashboards, mobile experience, and final
-validation/release. Do not begin them as part of Phase 5.
+The mobile interface, camera/gallery integration, deployment, and device/release work
+belong to Phase 7 and have not started.

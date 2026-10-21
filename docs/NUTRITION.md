@@ -101,12 +101,24 @@ nutrition estimate is based on the reference food and portion assumption.
 Broad classes cover different recipes, cuts, toppings, fillings, and cooking methods.
 The mapped USDA item is therefore a representative nutrition estimate, not a
 laboratory measurement of the photographed meal. One label also cannot describe a
-mixed plate. USDA source portions vary by record and are references; a future app
-should make the portion visible and editable before treating an estimate as a user's
-meal record. No API, mobile interface, food log, calorie goal, dashboard, or local
-food class expansion is part of Phase 4. The Phase 5 image-to-nutrition pipeline
-keeps classifier confidence informational: it never multiplies nutrition by
-confidence and never estimates portion weight from the image. It uses the configured
-default serving until a later UI lets a user adjust the portion. The Phase 5
+mixed plate. USDA source portions vary by record and are references. The Phase 4
+nutrition layer itself did not implement an API, mobile interface, food log, calorie
+goal, dashboard, or local food class expansion. The Phase 5 image-to-nutrition
+pipeline keeps classifier confidence informational: it never multiplies nutrition
+by confidence and never estimates portion weight from the image. It uses the
+configured default serving until a caller selects a portion through the Phase 6
+domain services. The Phase 5
 classifier has no unknown/out-of-distribution class, so unrelated images can still
 be assigned to a supported label; confidence does not prove the food is supported.
+
+## Phase 6 meal and dashboard services
+
+Phase 6 reuses `nutrition/src/calculator.py` for all default, serving-multiplier, and
+explicit-gram calculations. `app/meal_log.py` stores the selected portion grams and
+the resulting calories/macros in a meal entry. Optional classifier confidence is
+preserved only as prediction metadata and never changes nutrition or portion size.
+The daily and weekly domain summaries aggregate persisted meal results; they do not
+recalculate nutrition independently. UTC is the default calendar timezone, and a
+weekly summary covers the inclusive seven days ending on its requested date. Phase 6
+does not provide a mobile interface or infer weight from pixels. Those UI and
+camera/gallery tasks belong to Phase 7.
