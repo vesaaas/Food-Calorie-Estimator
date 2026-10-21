@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'services/image_acquisition_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/diary_screen.dart';
 import 'screens/goal_screen.dart';
@@ -7,7 +8,9 @@ import 'screens/scan_screen.dart';
 import 'theme/app_theme.dart';
 
 class FoodCalorieEstimatorApp extends StatelessWidget {
-  const FoodCalorieEstimatorApp({super.key});
+  const FoodCalorieEstimatorApp({super.key, this.imageAcquisitionService});
+
+  final ImageAcquisitionService? imageAcquisitionService;
 
   @override
   Widget build(BuildContext context) {
@@ -15,13 +18,17 @@ class FoodCalorieEstimatorApp extends StatelessWidget {
       title: 'Food Calorie Estimator',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: const MainNavigationScreen(),
+      home: MainNavigationScreen(
+        imageAcquisitionService: imageAcquisitionService,
+      ),
     );
   }
 }
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  const MainNavigationScreen({super.key, this.imageAcquisitionService});
+
+  final ImageAcquisitionService? imageAcquisitionService;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -30,17 +37,19 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  static const _screens = [
-    ScanScreen(),
-    DiaryScreen(),
-    DashboardScreen(),
-    GoalScreen(),
+  late final List<Widget> _screens = [
+    ScanScreen(imageAcquisitionService: widget.imageAcquisitionService),
+    const DiaryScreen(),
+    const DashboardScreen(),
+    const GoalScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: _screens[_selectedIndex]),
+      body: SafeArea(
+        child: IndexedStack(index: _selectedIndex, children: _screens),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) =>

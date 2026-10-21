@@ -1,10 +1,33 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:food_calorie_estimator/app.dart';
+import 'package:food_calorie_estimator/services/image_acquisition_service.dart';
 
 void main() {
-  Future<void> launchApp(WidgetTester tester) async {
-    await tester.pumpWidget(const FoodCalorieEstimatorApp());
+  late Directory imageDirectory;
+  late XFile testImage;
+
+  setUpAll(() async {
+    imageDirectory = await Directory.systemTemp.createTemp('meal_photo_test');
+    final imageFile = File('${imageDirectory.path}/meal.png');
+    await imageFile.writeAsBytes(_onePixelPng);
+    testImage = XFile(imageFile.path);
+  });
+
+  tearDownAll(() async {
+    await imageDirectory.delete(recursive: true);
+  });
+
+  Future<void> launchApp(
+    WidgetTester tester, {
+    ImageAcquisitionService? imageAcquisitionService,
+  }) async {
+    await tester.pumpWidget(
+      FoodCalorieEstimatorApp(imageAcquisitionService: imageAcquisitionService),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -40,18 +63,73 @@ void main() {
     expect(find.byKey(const Key('daily-goal-field')), findsOneWidget);
   });
 
-  testWidgets('photo actions show safe placeholder messages', (tester) async {
-    await launchApp(tester);
+  testWidgets('Take Photo invokes camera and previews the selected image', (
+    tester,
+  ) async {
+    final picker = FakeImageAcquisitionService(cameraResult: testImage);
+    await launchApp(tester, imageAcquisitionService: picker);
 
     await tester.tap(find.text('Take Photo'));
     await tester.pumpAndSettle();
-    expect(find.text('Camera integration coming next.'), findsOneWidget);
+    expect(picker.cameraCalls, 1);
+    expect(picker.galleryCalls, 0);
+    expect(find.byKey(const Key('selected-meal-image')), findsOneWidget);
+    expect(find.text('Photo ready for analysis'), findsOneWidget);
+    expect(find.textContaining('prediction'), findsNothing);
+  });
+
+  testWidgets('Choose from Gallery invokes gallery and previews the image', (
+    tester,
+  ) async {
+    final picker = FakeImageAcquisitionService(galleryResult: testImage);
+    await launchApp(tester, imageAcquisitionService: picker);
+    await tester.ensureVisible(find.text('Choose from Gallery'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose from Gallery'));
+    await tester.pumpAndSettle();
+    expect(picker.galleryCalls, 1);
+    expect(picker.cameraCalls, 0);
+    expect(find.byKey(const Key('selected-meal-image')), findsOneWidget);
+    expect(find.text('Photo ready for analysis'), findsOneWidget);
+  });
+
+  testWidgets('cancelling acquisition keeps the previous image', (
+    tester,
+  ) async {
+    final picker = FakeImageAcquisitionService(
+      galleryResult: testImage,
+      cameraResult: null,
+    );
+    await launchApp(tester, imageAcquisitionService: picker);
 
     await tester.ensureVisible(find.text('Choose from Gallery'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
     await tester.pumpAndSettle();
-    expect(find.text('Gallery integration coming next.'), findsOneWidget);
+    expect(find.byKey(const Key('selected-meal-image')), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Take Photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Take Photo'));
+    await tester.pumpAndSettle();
+    expect(picker.cameraCalls, 1);
+    expect(find.byKey(const Key('selected-meal-image')), findsOneWidget);
+    expect(find.text('Photo ready for analysis'), findsOneWidget);
+  });
+
+  testWidgets('picker errors show a message without crashing', (tester) async {
+    final picker = FakeImageAcquisitionService(
+      cameraError: Exception('failed'),
+    );
+    await launchApp(tester, imageAcquisitionService: picker);
+
+    await tester.tap(find.text('Take Photo'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Could not capture the photo. Please try again.'),
+      findsOneWidget,
+    );
+    expect(find.byType(NavigationBar), findsOneWidget);
   });
 
   testWidgets('goal form validates positive numeric input locally', (
@@ -76,3 +154,106 @@ void main() {
     );
   });
 }
+
+class FakeImageAcquisitionService implements ImageAcquisitionService {
+  FakeImageAcquisitionService({
+    this.cameraResult,
+    this.galleryResult,
+    this.cameraError,
+    this.galleryError,
+  });
+
+  final XFile? cameraResult;
+  final XFile? galleryResult;
+  final Exception? cameraError;
+  final Exception? galleryError;
+  int cameraCalls = 0;
+  int galleryCalls = 0;
+
+  @override
+  Future<XFile?> takePhoto() async {
+    cameraCalls++;
+    if (cameraError case final error?) throw error;
+    return cameraResult;
+  }
+
+  @override
+  Future<XFile?> chooseFromGallery() async {
+    galleryCalls++;
+    if (galleryError case final error?) throw error;
+    return galleryResult;
+  }
+}
+
+final _onePixelPng = <int>[
+  137,
+  80,
+  78,
+  71,
+  13,
+  10,
+  26,
+  10,
+  0,
+  0,
+  0,
+  13,
+  73,
+  72,
+  68,
+  82,
+  0,
+  0,
+  0,
+  1,
+  0,
+  0,
+  0,
+  1,
+  8,
+  6,
+  0,
+  0,
+  0,
+  31,
+  21,
+  196,
+  137,
+  0,
+  0,
+  0,
+  13,
+  73,
+  68,
+  65,
+  84,
+  8,
+  215,
+  99,
+  248,
+  207,
+  192,
+  240,
+  31,
+  0,
+  5,
+  0,
+  1,
+  255,
+  137,
+  153,
+  61,
+  29,
+  0,
+  0,
+  0,
+  0,
+  73,
+  69,
+  78,
+  68,
+  174,
+  66,
+  96,
+  130,
+];
