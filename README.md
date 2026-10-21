@@ -11,7 +11,7 @@ labels to representative nutrition estimates with adjustable portion calculation
 - Phase 4 — COMPLETE: Nutrition and Calorie Data Layer
 - Phase 5 — COMPLETE: regional food classes and image-to-nutrition integration
 - Phase 6 — COMPLETE: editable portions, meal log, calorie goal, and summaries
-- Phase 7 — PLANNED: mobile experience, device testing, and release
+- Phase 7 — IN PROGRESS: MobileNetV3/TFLite model preparation; mobile UI remains planned
 
 Food-101 supports classification only. The nutrition catalog is a separate sourced
 layer. Classification does not measure food weight; estimates use a configured
@@ -73,7 +73,7 @@ python nutrition/src/verify_nutrition.py
 The ten exact class mappings, USDA provenance, default servings, formula, and limits
 are documented in [the nutrition layer guide](docs/NUTRITION.md).
 
-## Phase 5 local food support and image-to-nutrition
+## Phase 5 local food support and image-to-nutrition baseline
 
 Phase 5 adds three Turkish regional classes to the existing ten-class label order:
 `borek`, `kebap`, and `sarma`. Source label `yaprak_sarma` maps explicitly to
@@ -101,6 +101,30 @@ Confidence is informational and does not scale nutrition or estimate portion siz
 The classifier has no unknown-food class; unrelated images may still be assigned to
 one of its 13 labels.
 
+The Phase 5 PyTorch EfficientNet-B0 is retained as the previous experiment and
+historical 95.66% mixed-test baseline. The assignment's mobile deployment model is
+now a separately trained Keras MobileNetV3 Small exported to TensorFlow Lite. On the
+same 2,719-image held-out split, the selected Keras checkpoint scored 89.41%
+accuracy (loss 0.33134); the optimized TFLite model scored 88.12%. These are new
+MobileNetV3 results, not revisions to the EfficientNet-B0 results. See
+[the mobile model contract](ml/mobile/mobilenet_v3_tflite_contract_v2.json) and
+[the ML pipeline report](docs/ML_PIPELINE.md).
+
+Run the offline TFLite/model regression check and classify a photo with the exported
+model:
+
+~~~bash
+python -m ml.src.verify_mobilenet_v3
+python -m ml.src.mobilenet_v3_pipeline path/to/meal.jpg
+~~~
+
+The TFLite input is RGB float32, NHWC `[1,224,224,3]`, pixel range 0–255. Resize
+the shortest edge to 256 with bilinear interpolation, then center crop 224×224. The
+model performs its own MobileNetV3 rescaling to [-1,1]. Outputs are 13 softmax
+scores in the exact label-file order. Confidence remains informational. This is
+model/deployment groundwork only: Phase 7 mobile UI, camera/gallery integration,
+physical Android testing, and release have not been implemented.
+
 ## Phase 6 domain services
 
 Phase 6 adds reusable Python application logic for editable portions, meal entries,
@@ -117,7 +141,7 @@ python -m app.verify_phase6
 Python services can create entries with default servings, a serving multiplier, or
 explicit grams. Classifier confidence may be stored as prediction metadata, but it
 does not affect nutrition or portion weight. Phase 6 is domain logic only. Phase 7
-will add the mobile UI and camera/gallery integration, deployment strategy, physical
+still needs the mobile UI and camera/gallery integration, client packaging, physical
 Android testing, and APK/demo/release work; this repository does not yet provide a
 mobile application.
 

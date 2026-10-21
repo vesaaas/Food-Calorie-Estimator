@@ -19,6 +19,7 @@ python-dateutil==2.9.0.post0
 setuptools==84.0.0
 six==1.17.0
 sympy==1.14.0
+tensorflow==2.20.0
 torch==2.14.1
 torchvision==0.29.1
 typing_extensions==4.16.0

@@ -1,0 +1,51 @@
+{
+  "contract_version": 1,
+  "model_file": "ml/artifacts/mobilenet_v3_small_phase7_v2.tflite",
+  "model_type": "TensorFlow Lite MobileNetV3 Small, 13-class image classifier",
+  "architecture": "mobilenet_v3_small",
+  "input": {
+    "width": 224,
+    "height": 224,
+    "color": "RGB",
+    "dtype": "float32",
+    "tensor_shape": [
+      1,
+      224,
+      224,
+      3
+    ],
+    "layout": "NHWC",
+    "pixel_range": [
+      0,
+      255
+    ],
+    "resize": "Resize shortest edge to 256 pixels with bilinear interpolation, then center crop 224x224",
+    "normalization": "The model includes Keras MobileNetV3 rescaling from [0,255] to [-1,1]; callers must not apply ImageNet mean/std normalization."
+  },
+  "output": {
+    "tensor_shape": [
+      1,
+      13
+    ],
+    "dtype": "float32",
+    "interpretation": "13 softmax probabilities in labels order; outputs sum approximately to 1",
+    "confidence": "Top softmax value is classifier confidence only; it is not a calibrated probability, nutrition factor, or portion estimate."
+  },
+  "labels_file": "ml/mobile/mobilenet_v3_labels.txt",
+  "labels": [
+    "pizza",
+    "hamburger",
+    "sushi",
+    "steak",
+    "ice_cream",
+    "donuts",
+    "omelette",
+    "french_fries",
+    "chicken_wings",
+    "spaghetti_bolognese",
+    "borek",
+    "kebap",
+    "sarma"
+  ],
+  "nutrition_food_id": "exactly the corresponding label string"
+}

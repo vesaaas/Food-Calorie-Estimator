@@ -1,0 +1,13 @@
+pizza
+hamburger
+sushi
+steak
+ice_cream
+donuts
+omelette
+french_fries
+chicken_wings
+spaghetti_bolognese
+borek
+kebap
+sarma

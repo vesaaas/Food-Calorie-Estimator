@@ -7,7 +7,7 @@ Food image
     ↓
 Image preprocessing
     ↓
-13-class EfficientNet-B0       ← Phase 5 (separate from frozen Phase 3)
+13-class MobileNetV3 Small     ← current TFLite deployment model
     ↓
 Predicted canonical class + informational confidence
     ↓
@@ -26,9 +26,9 @@ Mobile UI, camera/gallery      ← Phase 7 (not implemented)
 
 ## Responsibilities
 
-### Phase 5 classifier and nutrition integration
+### Historical PyTorch EfficientNet-B0 baseline (Phases 3–5)
 
-Phase 5 keeps the Phase 3 ten-class checkpoint intact. It creates a separate
+Phase 5 kept the Phase 3 ten-class checkpoint intact. It created a separate
 13-class EfficientNet-B0 checkpoint, initializes only its compatible `features.*`
 parameters from the Phase 3 checkpoint, and leaves the new 13-output head freshly
 initialized. Training combines the existing Food-101 development split with the
@@ -40,6 +40,34 @@ checkpoint validation, and Phase 4 exact catalog lookup. It returns classifier
 confidence independently from the nutrition result. Confidence never scales
 calories/macros and image pixels do not yield portion grams; the catalog default is
 used until a user-selected amount is available. This classifier has no unknown class.
+
+### MobileNetV3 TFLite deployment model (Phase 7 groundwork)
+
+The assignment-specified mobile model is implemented in parallel with the prior
+baseline. `ml/src/mobilenet_v3.py` builds Keras MobileNetV3 Small with ImageNet
+weights, a fresh 13-way softmax head, and the exact Phase 5 canonical class order.
+The whole backbone is fine-tuned. Its smaller model size is the chosen mobile
+tradeoff; the TFLite deployment result is reported separately from EfficientNet-B0.
+
+`tf_phase5_data.py` adapts the existing verified Phase 5 dataset objects. It does
+not change split membership or duplicate policy. It reverses Phase 2 ImageNet
+normalization so Keras receives raw RGB float32 values in [0,255], then Keras' built-in
+MobileNetV3 layer maps them to [-1,1]. Input is `[1,224,224,3]` NHWC after resizing
+the shortest edge to 256 and center-cropping to 224. Output is `[1,13]` softmax
+probabilities mapped by `ml/mobile/mobilenet_v3_labels.txt`.
+
+Training and validation run through `train_mobilenet_v3.py`; only validation
+accuracy selects the checkpoint. `evaluate_mobilenet_v3.py` evaluates the independent
+Phase 5 mixed test set. `export_mobilenet_v3_tflite.py` applies TFLite dynamic-range
+weight optimization and checks the serialized interpreter tensor contract.
+`mobilenet_v3_pipeline.py` provides reusable image prediction and exact nutrition
+lookup; `verify_mobilenet_v3.py` compares Keras and TFLite on real per-class test
+images and confirms the Phase 3/5 artifacts remain unchanged.
+
+The model contract is `ml/mobile/mobilenet_v3_tflite_contract_v2.json`. It specifies
+preprocessing, tensor shape/dtype, ordered labels, and the meaning/limits of
+confidence. Confidence is not calibrated, does not change nutrients, and does not
+estimate portion size. This adds no Flutter/mobile UI; that work remains outstanding.
 
 ### Image input
 

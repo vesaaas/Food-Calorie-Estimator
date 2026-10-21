@@ -14,15 +14,17 @@ for further model selection. Phase 4 — COMPLETE. Nutrition lookup and portion
 calculation are implemented for the original ten classes and extended with three
 regional records in Phase 5. Phase 5 is COMPLETE. Phase 6 is COMPLETE and provides
 reusable Python domain logic for editable portions, meal logging, personal calorie
-goals, and daily/weekly summaries. Phase 7 mobile UI and device/release work have
-not started; the repository does not yet contain a mobile application or infer
-portion weight from images.
+goals, and daily/weekly summaries. Phase 7 is IN PROGRESS for model/deployment
+preparation: MobileNetV3 Small is trained and exported as TFLite. Mobile UI,
+camera/gallery, device testing, and release have not started; the repository does
+not yet contain a mobile application or infer portion weight from images.
 
 ## Environment and dependencies
 
 - Python: 3.12.15 in .venv
 - PyTorch: 2.14.1
 - Torchvision: 0.29.1
+- TensorFlow: 2.20.0 (MobileNetV3/TFLite model path; CPU execution in this environment)
 - Pillow: 12.3.0
 - NumPy: 2.5.4
 - Pandas: 3.0.6
@@ -57,8 +59,16 @@ food-calorie-estimator/
 │   │   ├── raw/                 # Git-ignored Food-101 archive and extraction
 │   │   └── processed/           # Git-ignored reports and preview images
 │   ├── notebooks/
-│   ├── artifacts/              # Git-ignored generated model checkpoints
+│   ├── artifacts/              # Git-ignored generated model checkpoints and reports
+│   ├── mobile/                  # Tracked MobileNetV3 labels and TFLite contract
 │   └── src/
+│       ├── mobilenet_v3.py
+│       ├── tf_phase5_data.py
+│       ├── train_mobilenet_v3.py
+│       ├── evaluate_mobilenet_v3.py
+│       ├── export_mobilenet_v3_tflite.py
+│       ├── mobilenet_v3_pipeline.py
+│       ├── verify_mobilenet_v3.py
 │       ├── download_dataset.py
 │       ├── download_phase5_dataset.py
 │       ├── phase5_data.py
@@ -303,9 +313,24 @@ still receive one of those ten labels.
   an explicit timezone and injectable clock for deterministic callers/tests.
 - `python -m app.verify_phase6` is the offline domain and persistence verifier.
 
-## Phase 7 — PLANNED
+## Phase 7 — IN PROGRESS: Mobile model groundwork
 
-Phase 7 will add mobile UI/integration, camera/gallery input, deployment strategy,
-physical Android testing, and APK/demo/release validation. It has not started.
-Preserve the Phase 3 checkpoint and keep its frozen held-out result out of future
-model selection.
+- The separate assignment-required classifier is Keras MobileNetV3 Small, ImageNet
+  initialized and fine-tuned on the unchanged Phase 5 13-class splits. Best
+  validation accuracy was 84.12% (epoch 5 of the lower-rate continuation; validation
+  loss 0.49656).
+- On the independent 2,719-image Phase 5 mixed test split, Keras scored 89.41%
+  accuracy (loss 0.33134). The dynamically weight-optimized TFLite model scored
+  88.12% across the same held-out samples. These are separate from the historical
+  EfficientNet-B0 95.66% result.
+- TFLite artifact: `ml/artifacts/mobilenet_v3_small_phase7_v2.tflite` (1,113,776
+  bytes). Its contract and 13 ordered labels are tracked under `ml/mobile/`. The
+  flatbuffer and `.keras` checkpoints remain Git-ignored artifacts.
+- The verifier checked 39 representative images (three per class): Keras/TFLite
+  top-1 agreed on 38, mean absolute probability difference was 0.01010, and the
+  TFLite model ran over all 2,719 test images. Historical Phase 3/5 checkpoint and
+  evaluation SHA-256 values remained unchanged.
+
+Still outstanding in Phase 7: mobile UI/integration, camera/gallery, deployment
+packaging, physical Android testing, and APK/demo/release validation. Preserve the
+Phase 3 and Phase 5 EfficientNet artifacts and historical metrics.

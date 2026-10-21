@@ -486,3 +486,146 @@ informational and is never multiplied into nutrients; no portion weight is infer
 from an image. The model has no unknown class, so unrelated images may still be
 forced into one of the 13 supported labels. See `docs/NUTRITION.md` for the regional
 nutrition record limitations.
+
+## MobileNetV3 / TensorFlow Lite deployment model (Phase 7 groundwork)
+
+The assignment requires a MobileNet-family model and a TFLite deliverable. The
+earlier PyTorch EfficientNet-B0 checkpoints and their results remain historical
+baselines; no Phase 3 or Phase 5 model/evaluation artifact was overwritten. The
+current mobile model is a separate Keras MobileNetV3 Small with ImageNet pretrained
+backbone weights, all backbone layers fine-tuned, and a fresh dropout-0.2 plus
+13-output softmax head. EfficientNet weights were not copied because the model
+architectures differ.
+
+MobileNetV3 Small was selected for a mobile-size/latency tradeoff. It is much
+smaller than the baseline checkpoint and the exported dynamically weight-optimized
+TFLite file is about 1.1 MB. Its measured classification accuracy is lower than the
+EfficientNet-B0 baseline, so those results remain distinct and should be considered
+when choosing the final product model.
+
+### Phase 5 data adapter and preprocessing
+
+`tf_phase5_data.py` adapts the existing validated Phase 5 datasets rather than
+creating new splits. It retains the Food-101 training-derived train/validation
+membership, official Food-101 test membership, pinned TurkishFoods-25 train/eval/test
+separation, `yaprak_sarma` → `sarma` mapping, and existing path/content leakage
+checks. The exact 13-class order is:
+
+~~~text
+0 pizza
+1 hamburger
+2 sushi
+3 steak
+4 ice_cream
+5 donuts
+6 omelette
+7 french_fries
+8 chicken_wings
+9 spaghetti_bolognese
+10 borek
+11 kebap
+12 sarma
+~~~
+
+The Phase 5 mixed data used here contains 7,684 training images, 1,700 validation
+images, and 2,719 held-out test images. Per-class split counts are preserved in the
+training metadata and test report. The existing inverse-frequency class weights are
+used without duplicating samples. The adapter obtains existing 224×224 normalized
+samples, reverses the Phase 2 ImageNet normalization to raw RGB [0,255], and then
+lets Keras MobileNetV3's built-in preprocessing rescale inputs to [-1,1].
+
+Mobile and Python inference use the same deterministic evaluation geometry: convert
+to RGB, resize the shortest edge to 256 with bilinear interpolation, then center
+crop 224×224. The model accepts float32 NHWC `[1,224,224,3]`, values in [0,255]. It
+returns float32 `[1,13]` softmax scores in the ordered labels above. Do not apply
+ImageNet mean/std normalization again. The label file and complete machine-readable
+contract are `ml/mobile/mobilenet_v3_labels.txt` and
+`ml/mobile/mobilenet_v3_tflite_contract_v2.json`.
+
+### Training and validation selection
+
+TensorFlow 2.20.0/Keras ran on CPU in this environment. Seed 42, batch size 32,
+weighted sparse categorical cross-entropy, and Adam were used. The initial five
+epochs used learning rate 1e-4 and selected epoch 5 at 77.65% validation accuracy.
+A lower-rate continuation initialized from that validation-selected checkpoint used
+five further epochs at 1e-5; validation accuracy improved each epoch to a best of
+84.12% (loss 0.49656) at continuation epoch 5. The continuation was chosen over
+the first candidate using validation data only. The best continuation checkpoint
+is `ml/artifacts/mobilenet_v3_small_phase7_v2_best.keras`; both stage
+histories and checkpoints are local ignored artifacts. The checkpoint used for
+export was selected before any MobileNet test evaluation.
+
+Commands for a new run use new artifact paths so existing model artifacts are not
+overwritten:
+
+~~~bash
+python -m ml.src.train_mobilenet_v3 --epochs 5 --batch-size 32 --seed 42 --checkpoint ml/artifacts/mobilenet_v3_new_best.keras --history ml/artifacts/mobilenet_v3_new_training.json
+~~~
+
+The continuation command adds `--initial-checkpoint PATH` and uses a different
+`--checkpoint` and `--history` output path. Training refuses to overwrite existing
+checkpoint/history files.
+
+### Separate MobileNetV3 held-out test result
+
+After selecting the best continuation checkpoint using validation accuracy, the
+Keras model was evaluated on the same independent 2,719-image mixed test split used
+for the historical Phase 5 baseline. Keras test loss was 0.33134 and accuracy was
+89.41%. Per-class results:
+
+| Class | Correct / total | Accuracy |
+| --- | ---: | ---: |
+| pizza | 237 / 250 | 94.80% |
+| hamburger | 193 / 250 | 77.20% |
+| sushi | 213 / 250 | 85.20% |
+| steak | 196 / 250 | 78.40% |
+| ice_cream | 208 / 250 | 83.20% |
+| donuts | 228 / 250 | 91.20% |
+| omelette | 220 / 250 | 88.00% |
+| french_fries | 243 / 250 | 97.20% |
+| chicken_wings | 239 / 250 | 95.60% |
+| spaghetti_bolognese | 239 / 250 | 95.60% |
+| borek | 77 / 78 | 98.72% |
+| kebap | 81 / 82 | 98.78% |
+| sarma | 57 / 59 | 96.61% |
+
+This is MobileNetV3 classification accuracy, not nutrition/calorie accuracy. The
+historical PyTorch EfficientNet-B0 result remains 95.66% on the same mixed test
+set; it is not attributed to MobileNetV3.
+
+### TFLite conversion and verification
+
+`export_mobilenet_v3_tflite.py` converts the selected `.keras` model with TFLite
+dynamic-range weight optimization. The real flatbuffer is
+`ml/artifacts/mobilenet_v3_small_phase7_v2.tflite` (1,113,776 bytes). TFLite has
+float32 input and output tensors: input `[1,224,224,3]`; output `[1,13]`.
+
+The serialized artifact loaded in `tf.lite.Interpreter`, allocated tensors, and ran
+inference. On all 2,719 held-out images, exported TFLite accuracy was 88.12%; its
+per-class results were 93.20% pizza, 74.00% hamburger, 81.20% sushi, 72.40% steak,
+83.60% ice cream, 92.80% donuts, 88.40% omelette, 97.20% french fries, 94.80%
+chicken wings, 96.40% spaghetti Bolognese, 97.44% borek, 98.78% kebap, and 91.53%
+sarma. TFLite was lower than the selected Keras checkpoint by 1.29 percentage
+points on this split.
+The aggregate verification details are saved in the ignored artifact
+`ml/artifacts/mobilenet_v3_small_phase7_v2_tflite_verification.json`.
+
+For 39 representative images (three from each class), TFLite and Keras top-1
+predictions agreed for 38/39 images. The mean absolute probability difference was
+0.01010; the maximum observed difference was 0.32680. The exporter chose this
+quantization because aggregate TFLite test accuracy remained close to the float
+checkpoint while the flatbuffer stayed at about 1.1 MB. Confidence remains an
+uncalibrated classifier score and never changes nutrition or portion size.
+
+The Python TFLite pipeline is `mobilenet_v3_pipeline.py` and returns canonical
+`food_id`, confidence, default serving, and exact catalog nutrients. Its confidence
+is informational only. The classifier has no unknown-food output. The `mobile/`
+directory contains model metadata and labels, not a Flutter application. Flutter,
+camera/gallery integration, device testing, and release remain outstanding.
+
+~~~bash
+python -m ml.src.evaluate_mobilenet_v3
+python -m ml.src.export_mobilenet_v3_tflite
+python -m ml.src.verify_mobilenet_v3
+python -m ml.src.mobilenet_v3_pipeline path/to/meal.jpg
+~~~

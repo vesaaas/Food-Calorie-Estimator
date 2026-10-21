@@ -19,3 +19,7 @@ ml/artifacts/
 
 # Generated user diary data
 app/data/
+# Keep the final mobile deployment model in Git
+!ml/artifacts/
+ml/artifacts/*
+!ml/artifacts/mobilenet_v3_small_phase7_v2.tflite

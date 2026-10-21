@@ -10,12 +10,13 @@
 | Phase 4 | USDA nutrition catalog and portion calculations | COMPLETE |
 | Phase 5 | Local foods and full image-to-nutrition integration | COMPLETE |
 | Phase 6 | Editable portions, daily log, goals, and dashboards | COMPLETE |
-| Phase 7 | Mobile experience, final validation, and release | PLANNED |
+| Phase 7 | Mobile experience, final validation, and release | IN PROGRESS — model/TFLite preparation |
 
 Phases 1–6 are complete. Phase 4 built an independent nutrition data layer for the
 original ten labels. Phase 5 trained and evaluated its separate model and passed
 end-to-end verification. Phase 6 adds reusable domain services for portions, meal
-logging, goals, and summaries. Phase 7 remains planned.
+logging, goals, and summaries. Phase 7 model/deployment groundwork is in progress;
+mobile UI and release work remain.
 
 ## Phase 2 — Complete
 
@@ -79,7 +80,12 @@ implemented and verified synthetically. Detailed historical results remain in
 - This phase is reusable Python/domain/application logic. It has no mobile UI and
   does not infer portion weight from images.
 
-## Phase 7 — Mobile, device validation, and release (PLANNED)
+## Phase 7 — Mobile, device validation, and release (IN PROGRESS)
+
+- Add the assignment-required MobileNetV3 TensorFlow Lite model as a separate
+  deployment path while retaining PyTorch EfficientNet-B0 results as historical
+  baselines. The MobileNetV3 model is trained, independently evaluated, exported,
+  and verified; see `docs/ML_PIPELINE.md`.
 
 - Implement the mobile experience for camera/gallery input, prediction and
   confidence display, nutrition lookup, editable portion, meal logging, goal, and
@@ -89,5 +95,5 @@ implemented and verified synthetically. Detailed historical results remain in
 - Perform physical Android testing, final end-to-end validation, and prepare the
   APK/demo/release deliverables.
 
-The mobile interface, camera/gallery integration, deployment, and device/release work
-belong to Phase 7 and have not started.
+The mobile interface, camera/gallery integration, packaging/integration with the
+mobile client, and device/release work belong to Phase 7 and have not started.
