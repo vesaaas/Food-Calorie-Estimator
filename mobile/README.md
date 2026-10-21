@@ -1,17 +1,14 @@
-# food_calorie_estimator
+# Food Calorie Estimator mobile client
 
-A new Flutter project.
+This Flutter client targets iOS and Android from one codebase. It currently
+contains the Phase 7.3 mobile UI foundation: Scan, Diary, Dashboard, and Goal
+screens with working bottom navigation. Photo selection and goal saving are
+placeholders; no user data is persisted yet.
 
-## Getting Started
+Future phases will connect camera and gallery input, on-device TFLite food
+classification, nutrition estimates and editable portions, diary persistence,
+and daily/weekly dashboard data and charts. These integrations are not part of
+the current UI foundation.
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Run locally from this directory with `flutter run`. Verify the client with
+`flutter analyze` and `flutter test`.

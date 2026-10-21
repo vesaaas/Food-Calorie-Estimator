@@ -1,30 +1,78 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:food_calorie_estimator/main.dart';
+import 'package:food_calorie_estimator/app.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  Future<void> launchApp(WidgetTester tester) async {
+    await tester.pumpWidget(const FoodCalorieEstimatorApp());
+    await tester.pumpAndSettle();
+  }
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('app launches on the Scan screen', (tester) async {
+    await launchApp(tester);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(find.text('Food Calorie Estimator'), findsOneWidget);
+    expect(find.text('Take Photo'), findsOneWidget);
+    expect(find.text('Choose from Gallery'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets('bottom navigation reaches Diary, Dashboard, and Goal', (
+    tester,
+  ) async {
+    await launchApp(tester);
+
+    await tester.tap(find.text('Diary').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Your diary is ready'), findsOneWidget);
+    expect(find.text('No meals logged yet'), findsOneWidget);
+
+    await tester.tap(find.text('Dashboard').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Calories consumed'), findsOneWidget);
+    expect(find.text('Daily calorie goal'), findsOneWidget);
+    expect(find.text('Remaining calories'), findsOneWidget);
+    expect(find.text('Weekly calorie chart'), findsOneWidget);
+
+    await tester.tap(find.text('Goal').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Set a personal calorie target.'), findsOneWidget);
+    expect(find.byKey(const Key('daily-goal-field')), findsOneWidget);
+  });
+
+  testWidgets('photo actions show safe placeholder messages', (tester) async {
+    await launchApp(tester);
+
+    await tester.tap(find.text('Take Photo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Camera integration coming next.'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Choose from Gallery'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose from Gallery'));
+    await tester.pumpAndSettle();
+    expect(find.text('Gallery integration coming next.'), findsOneWidget);
+  });
+
+  testWidgets('goal form validates positive numeric input locally', (
+    tester,
+  ) async {
+    await launchApp(tester);
+    await tester.tap(find.text('Goal').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save goal'));
+    await tester.pumpAndSettle();
+    expect(find.text('Enter a number greater than zero'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('daily-goal-field')), '2000');
+    await tester.tap(find.text('Save goal'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Goal entry is valid. Saving will be available in a later phase.',
+      ),
+      findsOneWidget,
+    );
   });
 }
