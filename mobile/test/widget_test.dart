@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:food_calorie_estimator/app.dart';
 import 'package:food_calorie_estimator/services/image_acquisition_service.dart';
+import 'package:food_calorie_estimator/services/food_classification_service.dart';
 
 void main() {
   late Directory imageDirectory;
@@ -26,7 +27,10 @@ void main() {
     ImageAcquisitionService? imageAcquisitionService,
   }) async {
     await tester.pumpWidget(
-      FoodCalorieEstimatorApp(imageAcquisitionService: imageAcquisitionService),
+      FoodCalorieEstimatorApp(
+        imageAcquisitionService: imageAcquisitionService,
+        foodClassificationService: FakeFoodClassificationService(),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -75,7 +79,8 @@ void main() {
     expect(picker.galleryCalls, 0);
     expect(find.byKey(const Key('selected-meal-image')), findsOneWidget);
     expect(find.text('Photo ready for analysis'), findsOneWidget);
-    expect(find.textContaining('prediction'), findsNothing);
+    expect(find.text('Predicted food: pizza'), findsOneWidget);
+    expect(find.text('Confidence: 91.0%'), findsOneWidget);
   });
 
   testWidgets('Choose from Gallery invokes gallery and previews the image', (
@@ -183,6 +188,12 @@ class FakeImageAcquisitionService implements ImageAcquisitionService {
     if (galleryError case final error?) throw error;
     return galleryResult;
   }
+}
+
+class FakeFoodClassificationService implements FoodClassificationService {
+  @override
+  Future<FoodClassification> classifyImage(String imagePath) async =>
+      const FoodClassification(food: 'pizza', confidence: 0.91);
 }
 
 final _onePixelPng = <int>[
