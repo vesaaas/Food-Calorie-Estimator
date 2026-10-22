@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'services/image_acquisition_service.dart';
 import 'services/food_classification_service.dart';
+import 'services/nutrition_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/diary_screen.dart';
 import 'screens/goal_screen.dart';
@@ -13,10 +14,12 @@ class FoodCalorieEstimatorApp extends StatelessWidget {
     super.key,
     this.imageAcquisitionService,
     this.foodClassificationService,
+    this.foodNutritionService,
   });
 
   final ImageAcquisitionService? imageAcquisitionService;
   final FoodClassificationService? foodClassificationService;
+  final FoodNutritionService? foodNutritionService;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +30,7 @@ class FoodCalorieEstimatorApp extends StatelessWidget {
       home: MainNavigationScreen(
         imageAcquisitionService: imageAcquisitionService,
         foodClassificationService: foodClassificationService,
+        foodNutritionService: foodNutritionService,
       ),
     );
   }
@@ -37,10 +41,12 @@ class MainNavigationScreen extends StatefulWidget {
     super.key,
     this.imageAcquisitionService,
     this.foodClassificationService,
+    this.foodNutritionService,
   });
 
   final ImageAcquisitionService? imageAcquisitionService;
   final FoodClassificationService? foodClassificationService;
+  final FoodNutritionService? foodNutritionService;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -53,6 +59,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ScanScreen(
       imageAcquisitionService: widget.imageAcquisitionService,
       foodClassificationService: widget.foodClassificationService,
+      foodNutritionService: widget.foodNutritionService,
     ),
     const DiaryScreen(),
     const DashboardScreen(),

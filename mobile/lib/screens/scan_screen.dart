@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../services/image_acquisition_service.dart';
 import '../services/food_classification_service.dart';
+import '../services/nutrition_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/screen_header.dart';
 
@@ -14,10 +15,12 @@ class ScanScreen extends StatefulWidget {
     super.key,
     this.imageAcquisitionService,
     this.foodClassificationService,
+    this.foodNutritionService,
   });
 
   final ImageAcquisitionService? imageAcquisitionService;
   final FoodClassificationService? foodClassificationService;
+  final FoodNutritionService? foodNutritionService;
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
@@ -26,10 +29,16 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   late final ImageAcquisitionService _imageAcquisitionService;
   late final FoodClassificationService _foodClassificationService;
+  late final FoodNutritionService _foodNutritionService;
+  final TextEditingController _portionGramsController = TextEditingController();
   XFile? _selectedImage;
   bool _isPickingImage = false;
   bool _isClassifying = false;
+  bool _isLoadingNutrition = false;
+  bool _portionInputInvalid = false;
   FoodClassification? _classification;
+  NutritionEstimate? _nutrition;
+  int _nutritionRequest = 0;
 
   @override
   void initState() {
@@ -38,6 +47,14 @@ class _ScanScreenState extends State<ScanScreen> {
         widget.imageAcquisitionService ?? ImagePickerAcquisitionService();
     _foodClassificationService =
         widget.foodClassificationService ?? OnDeviceFoodClassificationService();
+    _foodNutritionService =
+        widget.foodNutritionService ?? AssetFoodNutritionService();
+  }
+
+  @override
+  void dispose() {
+    _portionGramsController.dispose();
+    super.dispose();
   }
 
   Future<void> _pickImage({required bool useCamera}) async {
@@ -49,25 +66,59 @@ class _ScanScreenState extends State<ScanScreen> {
           : await _imageAcquisitionService.chooseFromGallery();
       if (!mounted) return;
       if (image != null) {
+        _nutritionRequest++;
         setState(() {
           _selectedImage = image;
           _classification = null;
+          _nutrition = null;
+          _portionGramsController.clear();
+          _portionInputInvalid = false;
+          _isLoadingNutrition = false;
           _isClassifying = true;
         });
         try {
           final result = await _foodClassificationService.classifyImage(
             image.path,
           );
-          if (mounted) setState(() => _classification = result);
-        } on Exception {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Could not analyze this photo. Please try another image.',
+          final request = ++_nutritionRequest;
+          setState(() {
+            _classification = result;
+            _isClassifying = false;
+            _isLoadingNutrition = true;
+          });
+          try {
+            final estimate = await _foodNutritionService.estimate(result.food);
+            if (!mounted || request != _nutritionRequest) return;
+            setState(() {
+              _nutrition = estimate;
+              _portionGramsController.text = _formatGrams(
+                estimate.portionGrams,
+              );
+              _isLoadingNutrition = false;
+            });
+          } on Object {
+            if (!mounted) return;
+            setState(() => _isLoadingNutrition = false);
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                const SnackBar(
+                  content: Text('Nutrition information could not be loaded.'),
+                ),
+              );
+          }
+        } on Object {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Could not analyze this photo. Please try another image.',
+                ),
               ),
-            ),
-          );
+            );
         } finally {
           if (mounted) setState(() => _isClassifying = false);
         }
@@ -87,6 +138,30 @@ class _ScanScreenState extends State<ScanScreen> {
         );
     } finally {
       if (mounted) setState(() => _isPickingImage = false);
+    }
+  }
+
+  Future<void> _updatePortion(String value) async {
+    final grams = double.tryParse(value);
+    if (grams == null || !grams.isFinite || grams <= 0) {
+      _nutritionRequest++;
+      setState(() => _portionInputInvalid = true);
+      return;
+    }
+    final classification = _classification;
+    if (classification == null) return;
+    final request = ++_nutritionRequest;
+    setState(() => _portionInputInvalid = false);
+    try {
+      final estimate = await _foodNutritionService.estimate(
+        classification.food,
+        grams: grams,
+      );
+      if (!mounted || request != _nutritionRequest) return;
+      setState(() => _nutrition = estimate);
+    } on Object {
+      if (!mounted || request != _nutritionRequest) return;
+      setState(() => _portionInputInvalid = true);
     }
   }
 
@@ -182,9 +257,24 @@ class _ScanScreenState extends State<ScanScreen> {
                     'Confidence: ${(result.confidence * 100).toStringAsFixed(1)}%',
                   ),
                 ],
+                if (_isLoadingNutrition) ...[
+                  const SizedBox(height: 12),
+                  const LinearProgressIndicator(key: Key('nutrition-loading')),
+                  const SizedBox(height: 8),
+                  const Text('Loading nutrition…'),
+                ],
+                if (_nutrition case final estimate?) ...[
+                  const SizedBox(height: 18),
+                  _NutritionDetails(
+                    estimate: estimate,
+                    portionGramsController: _portionGramsController,
+                    portionInputInvalid: _portionInputInvalid,
+                    onPortionChanged: _updatePortion,
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text(
-                  'Choose a meal photo to identify the food. Nutrition estimates will be connected in a later phase.',
+                  'Nutrition is estimated from a representative food and your selected portion. Photo weight is not measured.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium
                       ?.copyWith(height: 1.45),
@@ -222,6 +312,121 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 }
 
+String _formatGrams(double grams) {
+  if (grams == grams.roundToDouble()) return grams.toStringAsFixed(0);
+  return grams.toString();
+}
+
+class _NutritionDetails extends StatelessWidget {
+  const _NutritionDetails({
+    required this.estimate,
+    required this.portionGramsController,
+    required this.portionInputInvalid,
+    required this.onPortionChanged,
+  });
+
+  final NutritionEstimate estimate;
+  final TextEditingController portionGramsController;
+  final bool portionInputInvalid;
+  final ValueChanged<String> onPortionChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final defaultServing = estimate.food.defaultServing;
+    final nutrients = estimate.nutrients;
+    final portionDescription = estimate.portionMode == 'default'
+        ? 'Default serving'
+        : 'Edited portion';
+    return Container(
+      key: const Key('nutrition-details'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF3ED),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Nutrition estimate',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Default serving: ${defaultServing.label} (${_formatGrams(defaultServing.grams)} g)',
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('portion-grams'),
+            controller: portionGramsController,
+            onChanged: onPortionChanged,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Current portion (g)',
+              helperText:
+                  '$portionDescription: ${_formatGrams(estimate.portionGrams)} g',
+              errorText: portionInputInvalid
+                  ? 'Enter a finite weight greater than zero.'
+                  : null,
+              isDense: true,
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _NutritionLine(
+            key: const Key('nutrition-calories'),
+            label: 'Calories',
+            value: '${nutrients.energyKcal.toStringAsFixed(1)} kcal',
+          ),
+          _NutritionLine(
+            key: const Key('nutrition-protein'),
+            label: 'Protein',
+            value: '${nutrients.proteinGrams.toStringAsFixed(1)} g',
+          ),
+          _NutritionLine(
+            key: const Key('nutrition-carbohydrates'),
+            label: 'Carbohydrates',
+            value: '${nutrients.carbohydratesGrams.toStringAsFixed(1)} g',
+          ),
+          _NutritionLine(
+            key: const Key('nutrition-fat'),
+            label: 'Fat',
+            value: '${nutrients.fatGrams.toStringAsFixed(1)} g',
+          ),
+          const SizedBox(height: 8),
+          Text(
+            estimate.food.mappingNotes,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NutritionLine extends StatelessWidget {
+  const _NutritionLine({super.key, required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Text(value, key: Key('value-$label')),
+        ],
+      ),
+    );
+  }
+}
+
 class _InfoNote extends StatelessWidget {
   const _InfoNote();
 
@@ -243,7 +448,7 @@ class _InfoNote extends StatelessWidget {
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
-              'Photo analysis, portion review, and meal logging are not connected yet.',
+              'Meal logging, personal goals, and progress charts are not connected yet.',
             ),
           ),
         ],

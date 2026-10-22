@@ -11,17 +11,15 @@ Image preprocessing
     ↓
 Predicted canonical class + informational confidence
     ↓
-Exact nutrition lookup
+Exact nutrition lookup         ← Flutter catalog mirror, Python catalog canonical
     ↓
-User-selected portion          ← Phase 6 domain service
+Default or user-edited portion ← Phase 7.6 mobile grams editor
     ↓
-Calculated calories/macros     ← existing Phase 4 calculator
-    ↓
-Persisted meal + goal          ← Phase 6 services/repository
-    ↓
-Daily and weekly summaries     ← Phase 6 domain service
-    ↓
-Mobile UI, camera/gallery      ← Phase 7 (not implemented)
+Calculated calories/macros     ← Phase 4 Python / Phase 7.6 Dart calculation
+    ├── Mobile Scan display    ← current through Phase 7.6
+    └── Persisted meal + goal  ← Phase 6 Python services (not mobile-integrated)
+         ↓
+       Daily and weekly summaries ← Phase 6 Python domain service
 ~~~
 
 ## Responsibilities
@@ -67,7 +65,8 @@ images and confirms the Phase 3/5 artifacts remain unchanged.
 The model contract is `ml/mobile/mobilenet_v3_tflite_contract_v2.json`. It specifies
 preprocessing, tensor shape/dtype, ordered labels, and the meaning/limits of
 confidence. Confidence is not calibrated, does not change nutrients, and does not
-estimate portion size. This adds no Flutter/mobile UI; that work remains outstanding.
+estimate portion size. The Flutter mobile flow now performs inference and nutrition
+lookup; see the mobile responsibility below.
 
 ### Image input
 
@@ -155,11 +154,21 @@ inclusive seven calendar days ending on its requested date, including empty days
 zero totals. UTC is the default timezone for assigning timestamps to days, and the
 services accept explicit timezones and clocks for deterministic use.
 
+### Flutter mobile flow (Phase 7.4–7.6)
+
+`mobile/lib/services/image_acquisition_service.dart` provides camera/gallery input;
+`food_classification_service.dart` returns the canonical class ID and confidence.
+`nutrition_service.dart` loads the bundled `mobile/assets/nutrition/foods.json`
+mirror, looks up the exact class ID, and applies the catalog default or an edited
+gram amount. The Python catalog remains canonical, and
+`nutrition/src/verify_nutrition.py` checks the full mobile copy for parity. Confidence
+is display metadata only; no portion weight is inferred from the image. The mobile
+flow displays nutrition but does not persist meals or connect goals and dashboards.
+
 Phase 6 is reusable Python/domain/application logic, not a terminal business flow.
-`app/verify_phase6.py` performs offline service and persistence verification. Phase
-7 is reserved for mobile UI/integration, camera/gallery, deployment strategy,
-physical Android testing, and APK/demo/release work. The `mobile/` directory remains
-a placeholder; no mobile application is implemented yet.
+`app/verify_phase6.py` performs offline service and persistence verification. Mobile
+meal persistence, goals, dashboards, physical Android testing, and release work
+remain outstanding.
 
 ## Phase 2 boundary
 

@@ -14,10 +14,12 @@ for further model selection. Phase 4 — COMPLETE. Nutrition lookup and portion
 calculation are implemented for the original ten classes and extended with three
 regional records in Phase 5. Phase 5 is COMPLETE. Phase 6 is COMPLETE and provides
 reusable Python domain logic for editable portions, meal logging, personal calorie
-goals, and daily/weekly summaries. Phase 7 is IN PROGRESS for model/deployment
-preparation: MobileNetV3 Small is trained and exported as TFLite. Mobile UI,
-camera/gallery, device testing, and release have not started; the repository does
-not yet contain a mobile application or infer portion weight from images.
+goals, and daily/weekly summaries. Phase 7 is IN PROGRESS. The Flutter app now has
+camera/gallery acquisition, on-device MobileNetV3 TFLite classification, and local
+nutrition lookup with an editable gram portion. The Phase 7.5 inference flow was
+verified on a physical iPhone. Image-based portion weight is not inferred; mobile
+meal persistence, goals, dashboards, Android device verification, and release work
+remain outstanding.
 
 ## Environment and dependencies
 
@@ -313,7 +315,7 @@ still receive one of those ten labels.
   an explicit timezone and injectable clock for deterministic callers/tests.
 - `python -m app.verify_phase6` is the offline domain and persistence verifier.
 
-## Phase 7 — IN PROGRESS: Mobile model groundwork
+## Phase 7 — IN PROGRESS: Mobile inference and nutrition integration
 
 - The separate assignment-required classifier is Keras MobileNetV3 Small, ImageNet
   initialized and fine-tuned on the unchanged Phase 5 13-class splits. Best
@@ -330,7 +332,12 @@ still receive one of those ten labels.
   top-1 agreed on 38, mean absolute probability difference was 0.01010, and the
   TFLite model ran over all 2,719 test images. Historical Phase 3/5 checkpoint and
   evaluation SHA-256 values remained unchanged.
+- Phase 7.4 added camera/gallery acquisition; Phase 7.5 added on-device inference
+  through `flutter_litert` and was verified on an iPhone. Phase 7.6 adds a bundled
+  copy of the canonical nutrition catalog, exact-ID lookup, default serving, and
+  editable grams with calories/macros recalculation. A Python verifier protects
+  parity with `nutrition/data/foods.json`.
 
-Still outstanding in Phase 7: mobile UI/integration, camera/gallery, deployment
-packaging, physical Android testing, and APK/demo/release validation. Preserve the
-Phase 3 and Phase 5 EfficientNet artifacts and historical metrics.
+Still outstanding in Phase 7: mobile meal persistence, goals, dashboards, physical
+Android testing, and APK/demo/release validation. Preserve the Phase 3 and Phase 5
+EfficientNet artifacts and historical metrics.

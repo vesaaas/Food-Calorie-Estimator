@@ -122,3 +122,21 @@ recalculate nutrition independently. UTC is the default calendar timezone, and a
 weekly summary covers the inclusive seven days ending on its requested date. Phase 6
 does not provide a mobile interface or infer weight from pixels. Those UI and
 camera/gallery tasks belong to Phase 7.
+
+## Phase 7.6 Flutter nutrition and portion integration
+
+The Flutter client bundles `mobile/assets/nutrition/foods.json` as a runtime copy of
+the canonical `nutrition/data/foods.json`. The canonical Python catalog remains the
+source of truth; `nutrition/src/verify_nutrition.py` compares every bundled food
+record with it, including all 13 IDs, nutrient values, default serving labels and
+weights, mappings, and provenance.
+
+After classification, the mobile client uses the exact predicted food ID for
+catalog lookup and starts from that food's existing default serving. The user can
+edit the portion in grams; calories and macros are recalculated as per-100 g values
+multiplied by selected grams divided by 100. The nutrition service also supports
+default-serving and serving-multiplier calculations with the same positive finite
+portion validation as the Python calculator. Confidence remains display metadata,
+does not alter nutrition, and image pixels are not used to estimate food weight.
+The values remain representative estimates for each catalog mapping. This phase
+does not persist meal entries.

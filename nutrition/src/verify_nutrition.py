@@ -78,6 +78,22 @@ class NutritionChecks(unittest.TestCase):
             with self.subTest(expected=expected), self.assertRaises(ValueError):
                 self.catalog.validate_coverage(expected)
 
+    def test_bundled_mobile_catalog_matches_authoritative_catalog(self):
+        mobile_path = ROOT / "mobile/assets/nutrition/foods.json"
+        mobile_data = json.loads(mobile_path.read_text(encoding="utf-8"))
+        canonical_data = json.loads(DEFAULT_CATALOG.read_text(encoding="utf-8"))
+        canonical_foods = {food["food_id"]: food for food in canonical_data["foods"]}
+        mobile_foods = {food["food_id"]: food for food in mobile_data["foods"]}
+        self.assertEqual(len(mobile_data["foods"]), len(mobile_foods), "duplicate mobile food IDs")
+        self.assertEqual(mobile_foods.keys(), canonical_foods.keys())
+        self.assertEqual(mobile_data["schema_version"], canonical_data["schema_version"])
+        self.assertEqual(mobile_data["catalog_version"], canonical_data["catalog_version"])
+        for food_id, canonical_food in canonical_foods.items():
+            with self.subTest(food_id=food_id):
+                # Comparing whole records covers nutrients, source mappings, default
+                # serving labels/weights, mapping notes, and provenance metadata.
+                self.assertEqual(mobile_foods[food_id], canonical_food)
+
     def test_lookup_ignores_json_order(self):
         data = deepcopy(self.data)
         data["foods"].reverse()

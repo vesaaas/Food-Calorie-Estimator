@@ -61,6 +61,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/models/mobilenet_v3_small_phase7_v2.tflite
+    - assets/nutrition/foods.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

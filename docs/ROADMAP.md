@@ -10,13 +10,14 @@
 | Phase 4 | USDA nutrition catalog and portion calculations | COMPLETE |
 | Phase 5 | Local foods and full image-to-nutrition integration | COMPLETE |
 | Phase 6 | Editable portions, daily log, goals, and dashboards | COMPLETE |
-| Phase 7 | Mobile experience, final validation, and release | IN PROGRESS — model/TFLite preparation |
+| Phase 7 | Mobile experience, final validation, and release | IN PROGRESS — inference and nutrition UI implemented |
 
 Phases 1–6 are complete. Phase 4 built an independent nutrition data layer for the
 original ten labels. Phase 5 trained and evaluated its separate model and passed
 end-to-end verification. Phase 6 adds reusable domain services for portions, meal
-logging, goals, and summaries. Phase 7 model/deployment groundwork is in progress;
-mobile UI and release work remain.
+logging, goals, and summaries. Phase 7 is in progress; the Flutter app now supports
+camera/gallery input, on-device classification, nutrition lookup, and editable grams.
+Mobile persistence, goals, dashboards, Android verification, and release work remain.
 
 ## Phase 2 — Complete
 
@@ -87,13 +88,16 @@ implemented and verified synthetically. Detailed historical results remain in
   baselines. The MobileNetV3 model is trained, independently evaluated, exported,
   and verified; see `docs/ML_PIPELINE.md`.
 
-- Implement the mobile experience for camera/gallery input, prediction and
-  confidence display, nutrition lookup, editable portion, meal logging, goal, and
-  daily/weekly progress.
+- Completed mobile work: camera/gallery acquisition, prediction/confidence display,
+  catalog-backed nutrition lookup, and editable gram portions with recalculation.
+  Python verification checks that the bundled mobile nutrition catalog matches the
+  authoritative catalog.
+- Remaining mobile work: meal logging, goal, and daily/weekly progress.
 - Choose and implement the deployment/integration strategy without replacing the
   verified Phase 5 PyTorch model blindly.
 - Perform physical Android testing, final end-to-end validation, and prepare the
   APK/demo/release deliverables.
 
-The mobile interface, camera/gallery integration, packaging/integration with the
-mobile client, and device/release work belong to Phase 7 and have not started.
+Physical iPhone verification has covered the Phase 7.5 classifier. Physical Android
+verification, mobile meal logging/goals/progress, and final device/release work are
+still pending.
