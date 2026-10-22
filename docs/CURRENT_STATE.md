@@ -26,9 +26,32 @@ physical iPhone verification of the completed Phase 7 flow. The Profile-mode bui
 install, and launch succeeded. Phase 7 is COMPLETE after automated and physical
 verification. The documented closed-set limitation remains: unsupported foods and
 non-food objects may receive a supported-food prediction at confidence >= 0.55; it
-does not block completion. Image-based portion weight is not inferred. Phase 8 Full
-Testing & Validation is next and has not started; Phase 9 Final Documentation and
-Phase 10 Demo & Submission follow.
+does not block completion. Image-based portion weight is not inferred. Phase 8 —
+Full Testing & Validation is COMPLETE; Phase 9 — Final Documentation is next, then
+Phase 10 — Demo & Submission.
+
+Phase 8 verification passed: `flutter analyze`; all 68 Flutter tests (including
+six classifier-boundary and four date/lifecycle tests); 17 nutrition verification
+tests; 13 Phase 6 regression tests; the MobileNetV3/TFLite verifier; the confidence
+evaluator self-test; and `git diff --check`. TFLite held-out accuracy remains
+88.12% on 2,719 images, with 38/39 representative TFLite/Keras top-1 matches.
+
+The confirmed local-day refresh defect was fixed with a shared lifecycle-resume
+check: Diary Today and Dashboard Today/Weekly refresh only when the local calendar
+day changes. The refresh only notifies listeners and does not mutate or persist
+meals, goals, photos, or nutrition snapshots. Same-day resume does not notify.
+
+Final physical iPhone validation passed in Profile mode, including camera/gallery
+classification, nutrition/portion editing, Diary/Goal/Dashboard, force-quit and
+independent relaunch persistence for meals, goal, saved photo, and totals, plus
+offline operation with Airplane Mode and Wi-Fi disabled, including TFLite inference.
+Android build/runtime validation was not performed: no Android SDK, emulator,
+toolchain, or physical Android device was available. Android runtime is therefore
+unverified and is not claimed as passed; it does not block this MentorTechz
+deliverable. The iOS duplicate Objective-C class warnings between
+`LiteRt.framework` and `LiteRtMetalAccelerator.framework` were observed while the
+tested build, launch, and on-device inference completed successfully. No framework
+workaround was applied, and the warning has not been confirmed harmless.
 
 ## Environment and dependencies
 

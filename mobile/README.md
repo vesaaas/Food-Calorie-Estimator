@@ -62,8 +62,10 @@ Physical iPhone verification passed: the app built, installed, and launched;
 Gallery inference predicted Pizza at 59.7% confidence, and Camera inference
 predicted French Fries at 99.9% confidence. The `flutter_litert` runtime also
 reported duplicate Objective-C classes between `LiteRt.framework` and
-`LiteRtMetalAccelerator.framework`. This remains a known release/runtime
-consideration; it has not been locally worked around or confirmed harmless.
+`LiteRtMetalAccelerator.framework` while the tested build, launch, and on-device
+inference completed successfully. No framework workaround was applied, and the
+warning has not been confirmed harmless; it remains a release/runtime
+consideration.
 
 Phase 7.6 nutrition and editable-portion verification also passed on the iPhone.
 French Fries loaded its canonical 110 g default serving and displayed 317.9 kcal,
@@ -74,6 +76,23 @@ image.
 
 Phase 7.4 camera/gallery image acquisition and Scan, Diary, Dashboard, and Goal
 navigation were also manually verified.
+
+Phase 8 validation passed on the physical iPhone: saved meal, goal, photo, and
+Dashboard totals remained correct after force-quit and independent Home Screen
+relaunch. Diary, Goal, Dashboard, nutrition data, saved photos, and Camera/Gallery
+TFLite classification also worked with Airplane Mode enabled and Wi-Fi disabled.
+Android build/runtime validation was not performed because no Android SDK,
+emulator/toolchain, or physical Android device was available; Android runtime is
+not claimed as tested. The model remains a closed-set classifier over the 13 foods
+listed above: its 0.55 cutoff rejects low-confidence predictions but does not detect
+non-food images. Unsupported foods and non-food objects can still receive a
+supported-food prediction at confidence >= 0.55.
+
+Automated Phase 8 verification passed: `flutter analyze`, all 68 Flutter tests,
+17 nutrition verification tests, 13 Phase 6 regression tests, the MobileNetV3/
+TFLite verifier, and the confidence evaluator self-test. The lifecycle-resume
+date refresh is covered by four focused tests; classifier preprocessing and output
+mapping are covered by six focused tests.
 
 Run locally from this directory with `flutter run`. Verify the client with
 `flutter analyze` and `flutter test`.

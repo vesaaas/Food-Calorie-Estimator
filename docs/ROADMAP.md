@@ -11,8 +11,8 @@
 | Phase 5 | Local foods and full image-to-nutrition integration | COMPLETE |
 | Phase 6 | Editable portions, daily log, goals, and dashboards | COMPLETE |
 | Phase 7 | Mobile App Implementation (7.1–7.8) | COMPLETE — automated and physical iPhone verification passed |
-| Phase 8 | Full Testing & Validation | PLANNED |
-| Phase 9 | Final Documentation | PLANNED |
+| Phase 8 | Full Testing & Validation | COMPLETE |
+| Phase 9 | Final Documentation | NEXT |
 | Phase 10 | Demo & Submission | PLANNED |
 
 Phases 1–6 are complete. Phase 4 built an independent nutrition data layer for the
@@ -25,7 +25,10 @@ physical iPhone verification passed, as did the final end-to-end Phase 7 flow. T
 Profile-mode build, install, and launch succeeded. The documented closed-set
 classifier limitation remains: unsupported foods and non-food objects may receive
 a supported-food prediction at confidence >= 0.55; this does not block Phase 7
-completion. Phase 8 — Full Testing & Validation is next and has not started.
+completion. Phase 8 automated and physical iPhone validation is complete. Android
+build/runtime validation was not performed because Android tooling and a device
+were unavailable; it is not a blocker for this MentorTechz deliverable. Phase 9 —
+Final Documentation is next.
 
 ## Phase 2 — Complete
 
@@ -110,12 +113,37 @@ implemented and verified synthetically. Detailed historical results remain in
   install, and launch. The known closed-set limitation is documented in
   `docs/ML_PIPELINE.md` and does not block Phase 7 completion.
 
-## Phase 8 — Full Testing & Validation (PLANNED)
+## Phase 8 — Full Testing & Validation (COMPLETE)
 
-Run end-to-end and regression verification across supported platforms and document
-the resulting validation status.
+Automated regression verification passed: Flutter analysis and all 68 Flutter
+tests, including six classifier-boundary tests and four local-day lifecycle tests;
+17 nutrition verification tests; 13 Phase 6 regression tests; the MobileNetV3/
+TFLite verifier; and the confidence evaluator self-test. The held-out TFLite
+accuracy remains 88.12% on 2,719 images, and representative TFLite/Keras top-1
+predictions agreed on 38 of 39 images. `git diff --check` passed.
 
-## Phase 9 — Final Documentation (PLANNED)
+The stale local-day UI issue was reproduced and fixed with app-level lifecycle
+resume handling and a shared `DiaryController` date-change notification. It
+refreshes Diary Today and Dashboard Today/Weekly without changing or persisting
+meals, goals, photos, or nutrition snapshots; same-day resume does not notify.
+
+Physical iPhone validation passed for Profile build/install/launch, camera/gallery
+and real TFLite inference, nutrition and editable portions, Diary/Goal/Dashboard,
+force-quit and independent relaunch persistence, saved photos, and operation with
+Airplane Mode enabled and Wi-Fi off, including offline classification. Android
+build/runtime validation was not performed because this environment had no Android
+SDK, emulator, toolchain, or physical Android device. It is an explicit limitation,
+not a tested platform claim or blocker for this deliverable.
+
+The 0.55 cutoff remains a low-confidence rejection threshold for a closed-set
+13-class model, not food-versus-non-food detection. Unsupported foods and non-food
+objects can still receive supported-class predictions at confidence >= 0.55. On
+iOS, duplicate Objective-C class warnings between `LiteRt.framework` and
+`LiteRtMetalAccelerator.framework` were observed while the tested build, launch,
+and on-device inference completed successfully. No framework workaround was
+applied, and the warning has not been confirmed harmless.
+
+## Phase 9 — Final Documentation (NEXT)
 
 Prepare the final project and technical documentation after implementation and
 validation are complete.

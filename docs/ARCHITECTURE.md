@@ -187,6 +187,17 @@ succeeded. Phase 7 is complete. The documented closed-set classifier limitation
 remains: unsupported foods and non-food objects can receive supported-food
 predictions at confidence >= 0.55; this limitation does not block Phase 7 completion.
 
+Phase 8 added an app-level lifecycle observer in `MainNavigationScreen`. On resume,
+it asks the shared `DiaryController` to compare the current local calendar day with
+its last known day. The controller notifies listeners only when that day changed;
+it does not mutate or persist diary state. This refreshes Diary Today and Dashboard
+Today/Weekly after a day boundary while preserving meals, goals, photos, and saved
+nutrition snapshots. Same-day resume does not notify. The 68-test Flutter suite,
+nutrition and Phase 6 regression checks, MobileNetV3/TFLite verification, and
+confidence evaluator self-test passed; physical iPhone persistence and offline
+checks also passed. Android build/runtime validation was not performed because
+Android tooling and a device were unavailable, and is not claimed as tested.
+
 ## Phase 2 boundary
 
 Phase 2 owns dataset download/reuse, metadata validation, class filtering, split

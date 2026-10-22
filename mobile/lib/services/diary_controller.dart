@@ -51,7 +51,9 @@ class DiaryController extends ChangeNotifier {
     MealIdFactory? mealIdFactory,
   }) : photoStore = photoStore ?? const NoopMealPhotoStore(),
        _clock = clock ?? DateTime.now,
-       _mealIdFactory = mealIdFactory ?? _newMealId;
+       _mealIdFactory = mealIdFactory ?? _newMealId {
+    _lastKnownLocalDay = _localCalendarDay(_clock());
+  }
 
   factory DiaryController.local({
     DiaryClock? clock,
@@ -71,6 +73,7 @@ class DiaryController extends ChangeNotifier {
   DiaryState? _state;
   bool _isLoading = false;
   Object? _loadError;
+  late DateTime _lastKnownLocalDay;
 
   bool get isInitialized => _state != null;
   bool get isLoading => _isLoading;
@@ -79,8 +82,19 @@ class DiaryController extends ChangeNotifier {
   double? get dailyCalorieGoal => state.dailyCalorieGoal;
 
   DateTime get today {
-    final now = _clock().toLocal();
-    return DateTime(now.year, now.month, now.day);
+    final day = _localCalendarDay(_clock());
+    _lastKnownLocalDay = day;
+    return day;
+  }
+
+  /// Notifies date-dependent views after the local day changes, without
+  /// mutating or persisting the diary state.
+  bool refreshIfLocalDayChanged() {
+    final currentDay = _localCalendarDay(_clock());
+    if (_sameDay(currentDay, _lastKnownLocalDay)) return false;
+    _lastKnownLocalDay = currentDay;
+    notifyListeners();
+    return true;
   }
 
   Future<void> initialize() => _serialize(() async {
@@ -104,6 +118,7 @@ class DiaryController extends ChangeNotifier {
       _loadError = error;
     } finally {
       _isLoading = false;
+      _lastKnownLocalDay = _localCalendarDay(_clock());
       notifyListeners();
     }
   });
@@ -214,6 +229,7 @@ class DiaryController extends ChangeNotifier {
     await repository.save(next);
     _state = next;
     _loadError = null;
+    _lastKnownLocalDay = _localCalendarDay(_clock());
     notifyListeners();
   }
 
@@ -234,6 +250,11 @@ bool _sameDay(DateTime left, DateTime right) =>
     left.year == right.year &&
     left.month == right.month &&
     left.day == right.day;
+
+DateTime _localCalendarDay(DateTime time) {
+  final local = time.toLocal();
+  return DateTime(local.year, local.month, local.day);
+}
 
 double _safeSum(Iterable<double> values) {
   var total = 0.0;
