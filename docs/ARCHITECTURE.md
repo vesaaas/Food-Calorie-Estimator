@@ -16,10 +16,10 @@ Exact nutrition lookup         ← Flutter catalog mirror, Python catalog canoni
 Default or user-edited portion ← Phase 7.6 mobile grams editor
     ↓
 Calculated calories/macros     ← Phase 4 Python / Phase 7.6 Dart calculation
-    ├── Mobile Scan display    ← current through Phase 7.6
-    └── Persisted meal + goal  ← Phase 6 Python services (not mobile-integrated)
+    ├── Mobile Scan display    ← Phase 7.6
+    └── Meal snapshot + goal   ← Phase 7.7 shared Flutter DiaryController
          ↓
-       Daily and weekly summaries ← Phase 6 Python domain service
+       Diary + Today/Weekly Dashboard ← Phase 7.7/7.8 shared Flutter state
 ~~~
 
 ## Responsibilities
@@ -154,7 +154,7 @@ inclusive seven calendar days ending on its requested date, including empty days
 zero totals. UTC is the default timezone for assigning timestamps to days, and the
 services accept explicit timezones and clocks for deterministic use.
 
-### Flutter mobile flow (Phase 7.4–7.6)
+### Flutter mobile flow (Phase 7.4–7.8)
 
 `mobile/lib/services/image_acquisition_service.dart` provides camera/gallery input;
 `food_classification_service.dart` returns the canonical class ID and confidence.
@@ -162,13 +162,30 @@ services accept explicit timezones and clocks for deterministic use.
 mirror, looks up the exact class ID, and applies the catalog default or an edited
 gram amount. The Python catalog remains canonical, and
 `nutrition/src/verify_nutrition.py` checks the full mobile copy for parity. Confidence
-is display metadata only; no portion weight is inferred from the image. The mobile
-flow displays nutrition but does not persist meals or connect goals and dashboards.
+is display metadata only; no portion weight is inferred from the image. Phase 7.7
+adds immutable meal snapshots and a daily goal to one shared `DiaryController`.
+`DiaryRepository` separates state operations from `JsonDiaryRepository`, which
+stores a versioned validated JSON document in app-private Application Support using
+a same-directory temporary file and replacement rename. The complete nutrition
+estimate and user-selected grams are stored at logging time; old entries are not
+recalculated from the catalog. Device-local calendar dates determine today's meal
+list and totals, while timestamps are serialized in UTC. Scan, Diary, Dashboard, and
+Goal share the controller. The Dashboard derives Today totals and a rolling seven-
+local-day Weekly calorie summary from saved meal snapshots. Progress is capped only
+for the visual indicator; remaining calories never go negative and an exceeded goal
+is reported separately. The weekly average includes all seven dates, including empty
+days. UTC timestamps are grouped by device-local calendar dates. A Flutter-native
+bar visualization avoids an additional chart dependency.
 
-Phase 6 is reusable Python/domain/application logic, not a terminal business flow.
-`app/verify_phase6.py` performs offline service and persistence verification. Mobile
-meal persistence, goals, dashboards, physical Android testing, and release work
-remain outstanding.
+Phase 6 remains reusable Python/domain/application logic. `app/verify_phase6.py`
+performs offline service and persistence verification. Phase 7.7 independently
+implements local Flutter persistence while retaining snapshot, confidence, and goal
+semantics. Phase 7.8 adds reactive mobile dashboard summaries without a second
+persistence path. Phase 7.7 and 7.8 physical iPhone verification passed, as did
+the final end-to-end Phase 7 flow. The Profile-mode build, install, and launch
+succeeded. Phase 7 is complete. The documented closed-set classifier limitation
+remains: unsupported foods and non-food objects can receive supported-food
+predictions at confidence >= 0.55; this limitation does not block Phase 7 completion.
 
 ## Phase 2 boundary
 

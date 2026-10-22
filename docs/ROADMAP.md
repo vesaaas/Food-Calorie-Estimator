@@ -10,14 +10,22 @@
 | Phase 4 | USDA nutrition catalog and portion calculations | COMPLETE |
 | Phase 5 | Local foods and full image-to-nutrition integration | COMPLETE |
 | Phase 6 | Editable portions, daily log, goals, and dashboards | COMPLETE |
-| Phase 7 | Mobile experience, final validation, and release | IN PROGRESS — inference and nutrition UI implemented |
+| Phase 7 | Mobile App Implementation (7.1–7.8) | COMPLETE — automated and physical iPhone verification passed |
+| Phase 8 | Full Testing & Validation | PLANNED |
+| Phase 9 | Final Documentation | PLANNED |
+| Phase 10 | Demo & Submission | PLANNED |
 
 Phases 1–6 are complete. Phase 4 built an independent nutrition data layer for the
 original ten labels. Phase 5 trained and evaluated its separate model and passed
 end-to-end verification. Phase 6 adds reusable domain services for portions, meal
-logging, goals, and summaries. Phase 7 is in progress; the Flutter app now supports
-camera/gallery input, on-device classification, nutrition lookup, and editable grams.
-Mobile persistence, goals, dashboards, Android verification, and release work remain.
+logging, goals, and summaries. Phase 7 implementation now supports
+camera/gallery input, on-device classification, nutrition lookup, editable grams,
+local meal logging, a calorie goal, and Today/Weekly dashboards. Phase 7.7 and 7.8
+physical iPhone verification passed, as did the final end-to-end Phase 7 flow. The
+Profile-mode build, install, and launch succeeded. The documented closed-set
+classifier limitation remains: unsupported foods and non-food objects may receive
+a supported-food prediction at confidence >= 0.55; this does not block Phase 7
+completion. Phase 8 — Full Testing & Validation is next and has not started.
 
 ## Phase 2 — Complete
 
@@ -81,23 +89,37 @@ implemented and verified synthetically. Detailed historical results remain in
 - This phase is reusable Python/domain/application logic. It has no mobile UI and
   does not infer portion weight from images.
 
-## Phase 7 — Mobile, device validation, and release (IN PROGRESS)
+## Phase 7 — Mobile App Implementation (IMPLEMENTATION COMPLETE)
 
 - Add the assignment-required MobileNetV3 TensorFlow Lite model as a separate
   deployment path while retaining PyTorch EfficientNet-B0 results as historical
   baselines. The MobileNetV3 model is trained, independently evaluated, exported,
   and verified; see `docs/ML_PIPELINE.md`.
 
-- Completed mobile work: camera/gallery acquisition, prediction/confidence display,
-  catalog-backed nutrition lookup, and editable gram portions with recalculation.
-  Python verification checks that the bundled mobile nutrition catalog matches the
-  authoritative catalog.
-- Remaining mobile work: meal logging, goal, and daily/weekly progress.
-- Choose and implement the deployment/integration strategy without replacing the
-  verified Phase 5 PyTorch model blindly.
-- Perform physical Android testing, final end-to-end validation, and prepare the
-  APK/demo/release deliverables.
+- Phase 7.4 added camera/gallery acquisition. Phase 7.5 added the MobileNetV3 TFLite
+  deployment model and was verified on a physical iPhone.
+- Phase 7.6 added canonical-catalog nutrition lookup and editable portions; physical
+  iPhone verification confirmed French Fries at 110 g and recalculation at 200 g.
+- Phase 7.7 adds local meal snapshots, today's diary, manual food entry, persisted
+  meal photos, and a persisted daily calorie goal.
+- Phase 7.8 connects the Dashboard to the shared diary state. Today shows snapshot
+  calories/macros, meal count, and optional goal progress. Weekly shows a rolling
+  seven-device-local-day calorie chart, total, seven-day average, and meal count.
+  Physical iPhone verification passed. The completed Phase 7 flow also passed final
+  end-to-end physical iPhone verification using a successful Profile-mode build,
+  install, and launch. The known closed-set limitation is documented in
+  `docs/ML_PIPELINE.md` and does not block Phase 7 completion.
 
-Physical iPhone verification has covered the Phase 7.5 classifier. Physical Android
-verification, mobile meal logging/goals/progress, and final device/release work are
-still pending.
+## Phase 8 — Full Testing & Validation (PLANNED)
+
+Run end-to-end and regression verification across supported platforms and document
+the resulting validation status.
+
+## Phase 9 — Final Documentation (PLANNED)
+
+Prepare the final project and technical documentation after implementation and
+validation are complete.
+
+## Phase 10 — Demo & Submission (PLANNED)
+
+Prepare the demo and submission deliverables from the validated application.

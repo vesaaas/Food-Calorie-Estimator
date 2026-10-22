@@ -617,11 +617,82 @@ quantization because aggregate TFLite test accuracy remained close to the float
 checkpoint while the flatbuffer stayed at about 1.1 MB. Confidence remains an
 uncalibrated classifier score and never changes nutrition or portion size.
 
+### TFLite confidence-threshold evaluation
+
+`ml/src/evaluate_tflite_confidence.py` evaluates confidence using the deployed
+`mobilenet_v3_small_phase7_v2.tflite` artifact and the exact Phase 5 deterministic
+evaluation transforms/class order above. It records each image's true class,
+top-1 predicted class, maximum softmax confidence, and correctness. Run it first on
+validation; choose a threshold there, then run the held-out test split once with
+that frozen value:
+
+~~~bash
+python -m ml.src.evaluate_tflite_confidence --split validation
+python -m ml.src.evaluate_tflite_confidence --split test --threshold 0.55
+~~~
+
+The JSON reports, including per-image rows, are written under ignored
+`ml/artifacts/`. Threshold comparison is inclusive: confidence greater than or
+equal to the threshold is accepted. The validation run considered candidates from
+0.30 through 0.70 in 0.05 steps. The recommended candidate is **0.55**: it raises
+accepted-prediction accuracy to 89.54% while retaining 85.47% of all predictions;
+it rejects 47.95% of originally incorrect predictions and 7.60% of originally
+correct predictions. It also rejects a 0.23-confidence result such as the observed
+computer-to-donuts example. Compared with 0.50, 0.55 rejects 26 more incorrect
+predictions and 28 more correct predictions while increasing accepted accuracy by
+1.35 percentage points. Moving to 0.60 rejects only 24 more incorrect predictions
+but loses 29 additional correct predictions and 3.12 percentage points of coverage.
+That makes 0.55 a practical middle point for this application's trust/coverage
+tradeoff. This is a validation-selected operating point, not a claim that confidence
+is calibrated.
+
+Validation candidate results (n=1,700; overall accuracy 82.82%):
+
+| Threshold | Accepted | Rejected | Accepted correct | Accepted incorrect | Accepted accuracy | Originally correct rejected |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.30 | 1,678 (98.71%) | 22 (1.29%) | 1,406 | 272 | 83.79% | 2 (0.14%) |
+| 0.35 | 1,648 (96.94%) | 52 (3.06%) | 1,399 | 249 | 84.89% | 9 (0.64%) |
+| 0.40 | 1,610 (94.71%) | 90 (5.29%) | 1,382 | 228 | 85.84% | 26 (1.85%) |
+| 0.45 | 1,564 (92.00%) | 136 (8.00%) | 1,360 | 204 | 86.96% | 48 (3.41%) |
+| 0.50 | 1,507 (88.65%) | 193 (11.35%) | 1,329 | 178 | 88.19% | 79 (5.61%) |
+| **0.55** | **1,453 (85.47%)** | **247 (14.53%)** | **1,301** | **152** | **89.54%** | **107 (7.60%)** |
+| 0.60 | 1,400 (82.35%) | 300 (17.65%) | 1,272 | 128 | 90.86% | 136 (9.66%) |
+| 0.65 | 1,348 (79.29%) | 352 (20.71%) | 1,243 | 105 | 92.21% | 165 (11.72%) |
+| 0.70 | 1,290 (75.88%) | 410 (24.12%) | 1,210 | 80 | 93.80% | 198 (14.06%) |
+
+Confidence on validation correct predictions (n=1,408): mean 0.8904, median
+0.9751; 10th/25th/75th/90th percentiles 0.6063/0.8483/0.9970/0.9995; range
+0.2418–1.0000. On incorrect predictions (n=292): mean 0.5819, median 0.5616;
+10th/25th/75th/90th percentiles 0.3200/0.4292/0.7208/0.8979; range
+0.1691–0.9992. The overlap is substantial, so any cutoff rejects some correct
+food predictions and accepts some mistakes.
+
+With 0.55 frozen before test evaluation, the 2,719-image held-out test set had
+2,396 correct and 323 incorrect predictions before rejection (88.12% accuracy).
+The threshold accepted 2,410 (88.64%) and rejected 309 (11.36%). Accepted
+predictions included 2,240 correct and 170 incorrect (92.95% accepted accuracy).
+It rejected 156 of 2,396 originally correct predictions (6.51%) and 153 of 323
+incorrect predictions (47.37%). Test results were not used to change the cutoff.
+Correct test predictions had mean/median confidence 0.9041/0.9832 (10th/25th/75th/
+90th percentiles 0.6371/0.8938/0.9979/0.9997; range 0.2037–1.0000); incorrect
+predictions had 0.5887/0.5703 (0.3431/0.4189/0.7335/0.8759; range
+0.1977–0.9873).
+
+This cutoff is only a low-confidence rejection rule for a **closed-set** 13-class
+classifier. The model always chooses among its supported classes; it is not a
+food-versus-non-food detector. Unsupported foods and non-food images can still
+receive high confidence and pass the cutoff. Physical testing observed a laptop
+classified as Donuts at about 64% confidence and a cake classified as Donuts above
+50%; both illustrate why the cutoff is not an unknown-food detector. Flutter uses
+the validation-derived 0.55 threshold to reject only low-confidence predictions.
+
 The Python TFLite pipeline is `mobilenet_v3_pipeline.py` and returns canonical
 `food_id`, confidence, default serving, and exact catalog nutrients. Its confidence
-is informational only. The classifier has no unknown-food output. The `mobile/`
-directory contains model metadata and labels, not a Flutter application. Flutter,
-camera/gallery integration, device testing, and release remain outstanding.
+is informational only. The classifier has no unknown-food output. The Flutter app
+in `mobile/` bundles this model and applies the documented 0.55 low-confidence
+gate during Scan. This gate does not identify whether an image contains food; only
+the 13 supported classes are recognized, and unsupported foods or non-food objects
+may still receive high-confidence predictions.
 
 ~~~bash
 python -m ml.src.evaluate_mobilenet_v3

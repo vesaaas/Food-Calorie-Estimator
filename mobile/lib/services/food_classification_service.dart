@@ -20,6 +20,8 @@ const foodClassNames = <String>[
   'sarma',
 ];
 
+const foodClassificationConfidenceThreshold = 0.55;
+
 const _inputTensorShape = [1, 224, 224, 3];
 const _outputTensorShape = [1, 13];
 
@@ -28,6 +30,9 @@ class FoodClassification {
 
   final String food;
   final double confidence;
+
+  bool get meetsConfidenceThreshold =>
+      confidence >= foodClassificationConfidenceThreshold;
 }
 
 abstract interface class FoodClassificationService {

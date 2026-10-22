@@ -2,7 +2,9 @@
 
 This Flutter client targets iOS and Android from one codebase. It currently
 contains the Phase 7.3 mobile UI foundation, Phase 7.4 camera/gallery image
-acquisition, and Phase 7.5 on-device TFLite food classification. Captured or
+acquisition, Phase 7.5 on-device TFLite food classification, Phase 7.6 editable
+nutrition portions, Phase 7.7 local diary and calorie goal, and the Phase 7.8
+Today/Weekly dashboard. Captured or
 selected meal photos are previewed and classified on the Scan screen. The
 MobileNetV3 Small deployment model is bundled at
 `assets/models/mobilenet_v3_small_phase7_v2.tflite`; preprocessing follows the
@@ -14,10 +16,47 @@ shows the catalog's default serving and lets the user edit its portion in grams;
 calories and macros are recalculated from the per-100 g values. Portion weight is
 not estimated from the image, and classifier confidence does not affect nutrition.
 The Python nutrition verifier checks that the bundled catalog matches its
-canonical source. No user data is persisted yet.
+canonical source. Phase 7.7 stores meal nutrition snapshots and the optional
+positive daily calorie goal together in a versioned JSON file in the app-private
+Application Support directory. The JSON repository validates the saved document,
+uses a same-directory temporary file and replacement rename, and is accessed through
+the injectable shared `DiaryController`. Meals retain the food ID, display name,
+time, portion mode/grams, calculated calories/macros, and optional confidence at
+the time they are added. Historical meals are not recalculated from the catalog.
+The mobile confidence gate accepts predictions at or above 0.55; lower scores show
+an identification retry message and do not load nutrition or allow Add Meal. This
+is a low-confidence rule for a closed-set classifier, not a food-versus-non-food
+detector. The supported classes are pizza, hamburger, sushi, steak, ice cream,
+donuts, omelette, french fries, chicken wings, spaghetti bolognese, borek, kebap,
+and sarma. Unsupported foods and non-food objects can occasionally receive
+high-confidence predictions; during physical testing, a laptop was classified as
+Donuts at about 64%, and a cake was also classified as Donuts above 50%. The Scan
+screen explains the supported set before scanning and provides a list of classes.
+A successful Add Meal copies the selected photo into the app-private
+`Application Support/meal_photos` directory and stores only its validated opaque
+file reference in the diary JSON. Existing entries without a photo remain valid.
+Users can also choose Add Manually to select one of the same 13 supported foods;
+this uses the canonical nutrition catalog without running the classifier and
+saves no confidence or photo. Diary rows show a small saved-photo thumbnail or a
+neutral placeholder for meals without an available photo.
+The Scan form resets after a successful save; failed saves preserve the current
+result. Diary rows open a detail sheet, and removing a meal removes its photo when
+the app-owned file can be safely deleted; orphan files are pruned after a later
+successful diary load.
+The Diary shows only meals on the device-local current calendar date; timestamps are
+stored in UTC. Removing a meal preserves the other meals and goal. Scan, Diary, and
+Goal share the same controller and repository state. Image weight is not inferred,
+and confidence remains metadata only.
 
-Diary persistence and daily/weekly dashboard data and charts remain future
-integrations.
+The Dashboard is connected to the shared diary controller. Today shows saved
+calorie and macro totals, meal count, and the optional goal/progress state. Weekly
+shows a rolling seven-local-day calorie bar chart, total, seven-day average, and
+meal count. Empty dates are zero, weekly average includes all seven dates, and
+UTC-stored meal timestamps are grouped by device-local calendar date. Dashboard
+values use saved meal snapshots and update when meals or the goal change; they do
+not recalculate from the catalog or use confidence/photo metadata.
+`flutter analyze`, `flutter test`, Python nutrition parity verification, and the
+Phase 6 regression verifier cover the current implementation.
 
 Physical iPhone verification passed: the app built, installed, and launched;
 Gallery inference predicted Pizza at 59.7% confidence, and Camera inference

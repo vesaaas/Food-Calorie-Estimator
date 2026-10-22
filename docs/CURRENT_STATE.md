@@ -14,12 +14,21 @@ for further model selection. Phase 4 — COMPLETE. Nutrition lookup and portion
 calculation are implemented for the original ten classes and extended with three
 regional records in Phase 5. Phase 5 is COMPLETE. Phase 6 is COMPLETE and provides
 reusable Python domain logic for editable portions, meal logging, personal calorie
-goals, and daily/weekly summaries. Phase 7 is IN PROGRESS. The Flutter app now has
+goals, and daily/weekly summaries. Phase 7 mobile implementation is complete. The Flutter app now has
 camera/gallery acquisition, on-device MobileNetV3 TFLite classification, and local
-nutrition lookup with an editable gram portion. The Phase 7.5 inference flow was
-verified on a physical iPhone. Image-based portion weight is not inferred; mobile
-meal persistence, goals, dashboards, Android device verification, and release work
-remain outstanding.
+nutrition lookup with an editable gram portion. Phase 7.5 inference and Phase 7.6
+nutrition editing were verified on a physical iPhone. Phase 7.7 now provides local
+meal snapshots, a today-only diary, and a persisted personal calorie goal through
+shared Flutter state. Phase 7.8 connects Today and Weekly dashboard summaries to
+that shared state and uses saved nutrition snapshots grouped by device-local dates.
+Phase 7.7 and 7.8 physical iPhone verification passed, as did final end-to-end
+physical iPhone verification of the completed Phase 7 flow. The Profile-mode build,
+install, and launch succeeded. Phase 7 is COMPLETE after automated and physical
+verification. The documented closed-set limitation remains: unsupported foods and
+non-food objects may receive a supported-food prediction at confidence >= 0.55; it
+does not block completion. Image-based portion weight is not inferred. Phase 8 Full
+Testing & Validation is next and has not started; Phase 9 Final Documentation and
+Phase 10 Demo & Submission follow.
 
 ## Environment and dependencies
 
@@ -315,7 +324,7 @@ still receive one of those ten labels.
   an explicit timezone and injectable clock for deterministic callers/tests.
 - `python -m app.verify_phase6` is the offline domain and persistence verifier.
 
-## Phase 7 — IN PROGRESS: Mobile inference and nutrition integration
+## Phase 7 — IMPLEMENTATION COMPLETE: Mobile App
 
 - The separate assignment-required classifier is Keras MobileNetV3 Small, ImageNet
   initialized and fine-tuned on the unchanged Phase 5 13-class splits. Best
@@ -338,6 +347,11 @@ still receive one of those ten labels.
   editable grams with calories/macros recalculation. A Python verifier protects
   parity with `nutrition/data/foods.json`.
 
-Still outstanding in Phase 7: mobile meal persistence, goals, dashboards, physical
-Android testing, and APK/demo/release validation. Preserve the Phase 3 and Phase 5
-EfficientNet artifacts and historical metrics.
+Phase 7.7 provides local meal snapshots, manual and photo meal entry, a daily goal,
+and diary details; its physical iPhone verification passed. Phase 7.8 provides a
+reactive Today dashboard and rolling seven-local-day Weekly dashboard; its physical
+iPhone verification passed. The final Phase 7 end-to-end physical iPhone flow was
+tested after a successful Profile-mode build, install, and launch. Phase 7 is
+complete. The closed-set limitation and 0.55 low-confidence threshold are documented
+in `docs/ML_PIPELINE.md`; the threshold is not a food-vs-non-food detector. Preserve
+the Phase 3 and Phase 5 EfficientNet artifacts and historical metrics.

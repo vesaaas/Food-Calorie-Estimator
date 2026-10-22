@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'services/image_acquisition_service.dart';
 import 'services/food_classification_service.dart';
 import 'services/nutrition_service.dart';
+import 'services/diary_controller.dart';
+import 'services/meal_photo_store.dart';
+import 'repositories/json_diary_repository.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/diary_screen.dart';
 import 'screens/goal_screen.dart';
@@ -15,11 +20,13 @@ class FoodCalorieEstimatorApp extends StatelessWidget {
     this.imageAcquisitionService,
     this.foodClassificationService,
     this.foodNutritionService,
+    this.diaryController,
   });
 
   final ImageAcquisitionService? imageAcquisitionService;
   final FoodClassificationService? foodClassificationService;
   final FoodNutritionService? foodNutritionService;
+  final DiaryController? diaryController;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +38,7 @@ class FoodCalorieEstimatorApp extends StatelessWidget {
         imageAcquisitionService: imageAcquisitionService,
         foodClassificationService: foodClassificationService,
         foodNutritionService: foodNutritionService,
+        diaryController: diaryController,
       ),
     );
   }
@@ -42,11 +50,13 @@ class MainNavigationScreen extends StatefulWidget {
     this.imageAcquisitionService,
     this.foodClassificationService,
     this.foodNutritionService,
+    this.diaryController,
   });
 
   final ImageAcquisitionService? imageAcquisitionService;
   final FoodClassificationService? foodClassificationService;
   final FoodNutritionService? foodNutritionService;
+  final DiaryController? diaryController;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -54,17 +64,39 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  late final DiaryController _diaryController;
+  late final bool _ownsDiaryController;
+  late final List<Widget> _screens;
 
-  late final List<Widget> _screens = [
-    ScanScreen(
-      imageAcquisitionService: widget.imageAcquisitionService,
-      foodClassificationService: widget.foodClassificationService,
-      foodNutritionService: widget.foodNutritionService,
-    ),
-    const DiaryScreen(),
-    const DashboardScreen(),
-    const GoalScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _ownsDiaryController = widget.diaryController == null;
+    _diaryController =
+        widget.diaryController ??
+        DiaryController(
+          repository: JsonDiaryRepository(),
+          photoStore: AppSupportMealPhotoStore(),
+        );
+    unawaited(_diaryController.initialize());
+    _screens = [
+      ScanScreen(
+        imageAcquisitionService: widget.imageAcquisitionService,
+        foodClassificationService: widget.foodClassificationService,
+        foodNutritionService: widget.foodNutritionService,
+        diaryController: _diaryController,
+      ),
+      DiaryScreen(diaryController: _diaryController),
+      DashboardScreen(diaryController: _diaryController),
+      GoalScreen(diaryController: _diaryController),
+    ];
+  }
+
+  @override
+  void dispose() {
+    if (_ownsDiaryController) _diaryController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
