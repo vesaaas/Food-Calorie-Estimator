@@ -38,6 +38,7 @@ dependencies:
   image: ^4.12.0
   flutter_litert: ^3.9.4
   path_provider: ^2.1.6
+  sqflite: ^2.4.5
 
 dependency_overrides:
   # Keep the SPM-compatible plugin implementation while path_provider_foundation's
@@ -54,6 +55,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  sqflite_common_ffi: ^2.4.5
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

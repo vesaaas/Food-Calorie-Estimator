@@ -405,9 +405,9 @@ it remains frozen and was not rerun during Phase 4 or Phase 5.
 Phase 4 adds a separate USDA FDC lookup and portion calculator for the existing ten
 labels. It does not change checkpoint classes, model code, confidence, or inference.
 See `docs/NUTRITION.md` for sources, default portions, calculations, and limitations.
-Phase 5 has added a separate 13-class classifier and image-to-nutrition integration;
-mobile application flow, editable portions, logging, goals, and dashboards remain
-planned.
+Phase 5 added the separate 13-class classifier and image-to-nutrition integration.
+The production Flutter application, offline persistence, meal logging, goals,
+editable portions, and dashboards are complete and physically verified on iPhone.
 
 ## Phase 5 — regional 13-class model and integration (COMPLETE)
 
@@ -487,7 +487,7 @@ from an image. The model has no unknown class, so unrelated images may still be
 forced into one of the 13 supported labels. See `docs/NUTRITION.md` for the regional
 nutrition record limitations.
 
-## MobileNetV3 / TensorFlow Lite deployment model (Phase 7 groundwork)
+## Production MobileNetV3 / TensorFlow Lite classifier
 
 The assignment requires a MobileNet-family model and a TFLite deliverable. The
 earlier PyTorch EfficientNet-B0 checkpoints and their results remain historical
@@ -497,11 +497,11 @@ backbone weights, all backbone layers fine-tuned, and a fresh dropout-0.2 plus
 13-output softmax head. EfficientNet weights were not copied because the model
 architectures differ.
 
-MobileNetV3 Small was selected for a mobile-size/latency tradeoff. It is much
-smaller than the baseline checkpoint and the exported dynamically weight-optimized
-TFLite file is about 1.1 MB. Its measured classification accuracy is lower than the
-EfficientNet-B0 baseline, so those results remain distinct and should be considered
-when choosing the final product model.
+MobileNetV3 Small was selected for its mobile-size/latency tradeoff and is the
+production classifier. The exported dynamically weight-optimized TFLite file is
+about 1.1 MB. The production model scored 88.12% on the 2,719-image held-out test
+set. The historical EfficientNet-B0 scores refer to separate class sets and
+experiments; they are not this app's deployment model.
 
 ### Phase 5 data adapter and preprocessing
 
@@ -700,3 +700,27 @@ python -m ml.src.export_mobilenet_v3_tflite
 python -m ml.src.verify_mobilenet_v3
 python -m ml.src.mobilenet_v3_pipeline path/to/meal.jpg
 ~~~
+
+## Rejected robustness experiments
+
+Three isolated experiments were evaluated and none replaced the production model:
+
+- A 13-class fine-tuning candidate reached 88.23% versus the production model's
+  88.12% on the same test images and improved expected calibration error from
+  0.02078 to 0.01294. Seven of 13 class accuracies regressed, so the candidate was
+  rejected and the production model remains unchanged.
+- A three-way `supported_food` / `unsupported_food` / `non_food` triage candidate
+  was rejected. At its validation-selected policy, held-out supported-food pass was
+  69.29%, unsupported-food rejection was 84.09%, and non-food rejection was 99.05%.
+  It rejected too many valid supported foods.
+- A binary FOOD / NON-FOOD candidate was rejected on validation. Its best observed
+  validation point reached 97.31% supported-food pass, but the lowest supported
+  class was 85.33% and non-food rejection was 85.98%; it did not satisfy the frozen
+  acceptance criteria. The final test split was intentionally not evaluated.
+
+These are experimental results, not app behavior. The reusable data, metrics,
+Open Images preparation, training, and phone-challenge evaluation scripts remain
+under `ml/src/` to preserve reproducibility. Downloaded datasets, checkpoints,
+experimental TFLite files, and per-image reports remain Git-ignored. No robustness
+gate is bundled in the app, and unsupported-food/non-food rejection remains an
+open limitation of the closed-set production classifier.

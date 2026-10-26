@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../models/diary_state.dart';
 import '../models/meal_entry.dart';
 import '../repositories/diary_repository.dart';
-import '../repositories/json_diary_repository.dart';
+import '../repositories/sqlite_diary_repository.dart';
 import 'meal_photo_store.dart';
 import 'nutrition_service.dart';
 
@@ -59,7 +59,7 @@ class DiaryController extends ChangeNotifier {
     DiaryClock? clock,
     MealIdFactory? mealIdFactory,
   }) => DiaryController(
-    repository: JsonDiaryRepository(),
+    repository: SqliteDiaryRepository(),
     photoStore: AppSupportMealPhotoStore(),
     clock: clock,
     mealIdFactory: mealIdFactory,

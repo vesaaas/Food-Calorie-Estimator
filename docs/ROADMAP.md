@@ -12,7 +12,7 @@
 | Phase 6 | Editable portions, daily log, goals, and dashboards | COMPLETE |
 | Phase 7 | Mobile App Implementation (7.1–7.8) | COMPLETE — automated and physical iPhone verification passed |
 | Phase 8 | Full Testing & Validation | COMPLETE |
-| Phase 9 | Final Documentation | NEXT |
+| Phase 9 | Final Documentation and repository review | COMPLETE |
 | Phase 10 | Demo & Submission | PLANNED |
 
 Phases 1–6 are complete. Phase 4 built an independent nutrition data layer for the
@@ -21,14 +21,13 @@ end-to-end verification. Phase 6 adds reusable domain services for portions, mea
 logging, goals, and summaries. Phase 7 implementation now supports
 camera/gallery input, on-device classification, nutrition lookup, editable grams,
 local meal logging, a calorie goal, and Today/Weekly dashboards. Phase 7.7 and 7.8
-physical iPhone verification passed, as did the final end-to-end Phase 7 flow. The
-Profile-mode build, install, and launch succeeded. The documented closed-set
-classifier limitation remains: unsupported foods and non-food objects may receive
-a supported-food prediction at confidence >= 0.55; this does not block Phase 7
-completion. Phase 8 automated and physical iPhone validation is complete. Android
-build/runtime validation was not performed because Android tooling and a device
-were unavailable; it is not a blocker for this MentorTechz deliverable. Phase 9 —
-Final Documentation is next.
+physical iPhone verification passed, as did the final end-to-end Phase 7 flow.
+Flutter production persistence is versioned local SQLite with a safe, idempotent
+legacy JSON migration; the JSON source is preserved. Automated migration tests and
+physical iPhone verification of migration, meal/goal/photo persistence, dashboards,
+and restart behavior are complete. Phase 8 automated and physical iPhone validation
+is complete. Phase 9 final documentation and repository review is complete.
+Android physical-device validation was not performed.
 
 ## Phase 2 — Complete
 
@@ -80,9 +79,9 @@ implemented and verified synthetically. Detailed historical results remain in
 
 - `app/meal_log.py` creates meal entries from exact nutrition catalog IDs using the
   existing calculator for defaults, serving multipliers, or explicit grams.
-- `app/repositories.py` defines the persistence boundary; `app/storage.py` provides
-  validated atomic JSON storage, with missing initial storage treated as an empty
-  diary. Runtime diary data is Git-ignored.
+- `app/repositories.py` defines the standalone Python Phase 6 persistence boundary;
+  `app/storage.py` provides validated atomic JSON storage for those Python
+  services. Flutter production persistence is a separate SQLite adapter.
 - `app/goals.py` stores a finite positive daily calorie goal. `app/dashboard.py`
   provides daily and weekly nutrition totals, progress and goal-overage information.
 - The weekly interval is seven inclusive calendar dates ending on the requested
@@ -92,7 +91,7 @@ implemented and verified synthetically. Detailed historical results remain in
 - This phase is reusable Python/domain/application logic. It has no mobile UI and
   does not infer portion weight from images.
 
-## Phase 7 — Mobile App Implementation (IMPLEMENTATION COMPLETE)
+## Phase 7 — Mobile App Implementation (IMPLEMENTATION AND IPHONE VERIFICATION COMPLETE)
 
 - Add the assignment-required MobileNetV3 TensorFlow Lite model as a separate
   deployment path while retaining PyTorch EfficientNet-B0 results as historical
@@ -103,7 +102,7 @@ implemented and verified synthetically. Detailed historical results remain in
   deployment model and was verified on a physical iPhone.
 - Phase 7.6 added canonical-catalog nutrition lookup and editable portions; physical
   iPhone verification confirmed French Fries at 110 g and recalculation at 200 g.
-- Phase 7.7 adds local meal snapshots, today's diary, manual food entry, persisted
+- Phase 7.7 added local meal snapshots, today's diary, manual food entry, persisted
   meal photos, and a persisted daily calorie goal.
 - Phase 7.8 connects the Dashboard to the shared diary state. Today shows snapshot
   calories/macros, meal count, and optional goal progress. Weekly shows a rolling
@@ -113,10 +112,20 @@ implemented and verified synthetically. Detailed historical results remain in
   install, and launch. The known closed-set limitation is documented in
   `docs/ML_PIPELINE.md` and does not block Phase 7 completion.
 
+- SQLite is production persistence for Flutter. `sqflite` stores meal snapshots in
+  `meals`, the daily goal in `goals`, and the one-time JSON migration marker in
+  `app_metadata`; `logged_at_utc` is indexed. Migration preserves meals, goals, and
+  photo references, marks completion only after successful writes, and retains the
+  source JSON. Automated migration tests and physical iPhone verification passed.
+- The final physical check confirmed old meals/goals/photos survived migration,
+  add/edit/remove, goal updates, Today/Weekly summaries, restart persistence,
+  Camera/Gallery classification, editable grams, classified meal saves, and manual
+  entry. Core app operation was checked offline.
+
 ## Phase 8 — Full Testing & Validation (COMPLETE)
 
-Automated regression verification passed: Flutter analysis and all 68 Flutter
-tests, including six classifier-boundary tests and four local-day lifecycle tests;
+Automated regression verification passed: Flutter analysis and all 74 Flutter
+tests, including SQLite migration and persistence tests;
 17 nutrition verification tests; 13 Phase 6 regression tests; the MobileNetV3/
 TFLite verifier; and the confidence evaluator self-test. The held-out TFLite
 accuracy remains 88.12% on 2,719 images, and representative TFLite/Keras top-1
@@ -143,10 +152,12 @@ iOS, duplicate Objective-C class warnings between `LiteRt.framework` and
 and on-device inference completed successfully. No framework workaround was
 applied, and the warning has not been confirmed harmless.
 
-## Phase 9 — Final Documentation (NEXT)
+## Phase 9 — Final Documentation (COMPLETE)
 
-Prepare the final project and technical documentation after implementation and
-validation are complete.
+The README, architecture, ML results and limitations, nutrition guide, roadmap, and
+current-state notes now match the verified app. Rejected robustness experiments are
+identified as experiments; their generated data, reports, and checkpoints remain
+ignored by Git.
 
 ## Phase 10 — Demo & Submission (PLANNED)
 

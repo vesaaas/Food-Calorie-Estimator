@@ -7,7 +7,7 @@ import 'services/food_classification_service.dart';
 import 'services/nutrition_service.dart';
 import 'services/diary_controller.dart';
 import 'services/meal_photo_store.dart';
-import 'repositories/json_diary_repository.dart';
+import 'repositories/sqlite_diary_repository.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/diary_screen.dart';
 import 'screens/goal_screen.dart';
@@ -77,7 +77,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     _diaryController =
         widget.diaryController ??
         DiaryController(
-          repository: JsonDiaryRepository(),
+          repository: SqliteDiaryRepository(),
           photoStore: AppSupportMealPhotoStore(),
         );
     unawaited(_diaryController.initialize());

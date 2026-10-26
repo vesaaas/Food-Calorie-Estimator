@@ -1,6 +1,6 @@
 # Architecture
 
-## Current and planned flow
+## Current production flow
 
 ~~~text
 Food image
@@ -39,7 +39,7 @@ confidence independently from the nutrition result. Confidence never scales
 calories/macros and image pixels do not yield portion grams; the catalog default is
 used until a user-selected amount is available. This classifier has no unknown class.
 
-### MobileNetV3 TFLite deployment model (Phase 7 groundwork)
+### MobileNetV3 TFLite production classifier
 
 The assignment-specified mobile model is implemented in parallel with the prior
 baseline. `ml/src/mobilenet_v3.py` builds Keras MobileNetV3 Small with ImageNet
@@ -139,12 +139,12 @@ and computed nutrients, plus timestamp and optional informational classifier
 confidence. The confidence field is metadata only; the domain does not use it in
 nutrition calculations or portion selection.
 
-`app/repositories.py` defines the diary persistence protocol. `app/storage.py`
-implements that contract with validated, atomic JSON writes; meal and goal services
-depend on the protocol, not file operations. Missing storage means an empty diary.
-The JSON file under `app/data/` is generated runtime data and Git-ignored, so a
-future client can supply a SQLite or platform repository without rewriting domain
-services.
+`app/repositories.py` defines the standalone Python diary persistence protocol.
+`app/storage.py` implements that contract with validated, atomic JSON writes; meal
+and goal services depend on the protocol, not file operations. Missing storage
+means an empty diary. Runtime JSON data under `app/data/` is Git-ignored. The
+Flutter app implements its own production SQLite repository and shares the same
+domain boundaries and saved meal semantics.
 
 `app/goals.py` validates and stores a positive finite daily calorie goal.
 `app/dashboard.py` provides pure daily and weekly aggregation plus repository-backed
@@ -164,35 +164,50 @@ gram amount. The Python catalog remains canonical, and
 `nutrition/src/verify_nutrition.py` checks the full mobile copy for parity. Confidence
 is display metadata only; no portion weight is inferred from the image. Phase 7.7
 adds immutable meal snapshots and a daily goal to one shared `DiaryController`.
-`DiaryRepository` separates state operations from `JsonDiaryRepository`, which
-stores a versioned validated JSON document in app-private Application Support using
-a same-directory temporary file and replacement rename. The complete nutrition
-estimate and user-selected grams are stored at logging time; old entries are not
-recalculated from the catalog. Device-local calendar dates determine today's meal
-list and totals, while timestamps are serialized in UTC. Scan, Diary, Dashboard, and
-Goal share the controller. The Dashboard derives Today totals and a rolling seven-
-local-day Weekly calorie summary from saved meal snapshots. Progress is capped only
-for the visual indicator; remaining calories never go negative and an exceeded goal
-is reported separately. The weekly average includes all seven dates, including empty
-days. UTC timestamps are grouped by device-local calendar dates. A Flutter-native
-bar visualization avoids an additional chart dependency.
+`DiaryRepository` separates state operations from persistence. Production uses
+`SqliteDiaryRepository` from `sqflite` with a versioned database in app-private
+Application Support. The `meals` table preserves the full current `MealEntry`:
+stable ID, food ID, display name, UTC timestamp, portion mode and grams, saved
+calories/macros, optional classifier confidence, photo reference, and persisted
+ordering. The `goals` table stores the optional daily calorie goal. The
+`app_metadata` table holds the one-time legacy migration marker. An index on
+`logged_at_utc` supports date-oriented meal reads; SQL data values use parameterized
+arguments.
 
-Phase 6 remains reusable Python/domain/application logic. `app/verify_phase6.py`
-performs offline service and persistence verification. Phase 7.7 independently
-implements local Flutter persistence while retaining snapshot, confidence, and goal
-semantics. Phase 7.8 adds reactive mobile dashboard summaries without a second
-persistence path. Phase 7.7 and 7.8 physical iPhone verification passed, as did
-the final end-to-end Phase 7 flow. The Profile-mode build, install, and launch
-succeeded. Phase 7 is complete. The documented closed-set classifier limitation
-remains: unsupported foods and non-food objects can receive supported-food
-predictions at confidence >= 0.55; this limitation does not block Phase 7 completion.
+On first database access, `JsonDiaryRepository` is used only as a migration reader.
+The source document is validated by the existing Dart model and copied to SQLite
+in one transaction. The migration marker is written in that same transaction only
+after all meal and goal writes succeed. The old JSON file is not deleted, and the
+marker prevents repeated imports. If source parsing or a database write fails, the
+transaction rolls back and the JSON source remains intact. The migration is
+offline and does not require a server.
+
+The complete nutrition estimate and user-selected grams are stored at logging
+time; old entries are not recalculated from the catalog. Photos remain in the
+existing app-private `Application Support/meal_photos` directory, with safe photo
+references stored in SQLite. Device-local calendar dates determine today's meal
+list and totals, while timestamps are stored in UTC. Scan, Diary, Dashboard, and
+Goal share the controller. The Dashboard derives Today totals and a rolling
+seven-local-day Weekly calorie summary from saved meal snapshots. Progress is
+capped only for the visual indicator; remaining calories never go negative and an
+exceeded goal is reported separately. The weekly average includes all seven dates,
+including empty days.
+
+The standalone Phase 6 Python services retain their JSON adapter and verifier; they
+are separate from the Flutter production SQLite store. Phase 7.7 and 7.8 physical
+iPhone verification passed. The final SQLite migration was also verified on the
+same physical iPhone, including existing meals, goal, and photos; add/edit/remove;
+Today/Weekly; force-close/relaunch; manual entry; Camera/Gallery classification;
+and editable nutrition portions. The classifier remains closed-set: unsupported
+foods and non-food objects can receive supported-food predictions, including at
+confidence >= 0.55. This threshold is only low-confidence handling.
 
 Phase 8 added an app-level lifecycle observer in `MainNavigationScreen`. On resume,
 it asks the shared `DiaryController` to compare the current local calendar day with
 its last known day. The controller notifies listeners only when that day changed;
 it does not mutate or persist diary state. This refreshes Diary Today and Dashboard
 Today/Weekly after a day boundary while preserving meals, goals, photos, and saved
-nutrition snapshots. Same-day resume does not notify. The 68-test Flutter suite,
+nutrition snapshots. Same-day resume does not notify. The 74-test Flutter suite,
 nutrition and Phase 6 regression checks, MobileNetV3/TFLite verification, and
 confidence evaluator self-test passed; physical iPhone persistence and offline
 checks also passed. Android build/runtime validation was not performed because

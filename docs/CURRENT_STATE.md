@@ -2,56 +2,33 @@
 
 ## Project status
 
-Phase 1 — Project Setup: complete.
+All implementation phases are complete. Phase 1–6 cover the Python dataset,
+historical classifiers, nutrition catalog, and reusable domain services. Phase 7
+delivers the Flutter app with Camera/Gallery classification, nutrition and editable
+grams, manual entry, SQLite meal/goal persistence, saved photos, Diary, and Today/
+Weekly dashboards. The SQLite migration and complete persistence flow passed
+automated checks and physical iPhone verification. Phase 8 automated and physical
+validation is complete; Phase 9 final documentation and repository review are
+complete. Demo/submission preparation remains the next project activity.
 
-Phase 2 — Dataset & Preprocessing: complete and verified against the real Food-101
-dataset.
+Production classification uses MobileNetV3 Small exported to TFLite. Its held-out
+test accuracy is 88.12% on 2,719 images over 13 classes. The 0.55 policy is for
+low-confidence result handling only. The classifier remains closed-set; non-food
+and unsupported-food rejection are not implemented. See `docs/ML_PIPELINE.md` for
+the historical EfficientNet results, rejected robustness candidates, and limits.
 
-Phase 3 — COMPLETE. EfficientNet-B0 training, validation-based checkpoint
-selection, one-time final held-out evaluation, and single-image inference are
-implemented and verified. The official test results are final and must not be used
-for further model selection. Phase 4 — COMPLETE. Nutrition lookup and portion
-calculation are implemented for the original ten classes and extended with three
-regional records in Phase 5. Phase 5 is COMPLETE. Phase 6 is COMPLETE and provides
-reusable Python domain logic for editable portions, meal logging, personal calorie
-goals, and daily/weekly summaries. Phase 7 mobile implementation is complete. The Flutter app now has
-camera/gallery acquisition, on-device MobileNetV3 TFLite classification, and local
-nutrition lookup with an editable gram portion. Phase 7.5 inference and Phase 7.6
-nutrition editing were verified on a physical iPhone. Phase 7.7 now provides local
-meal snapshots, a today-only diary, and a persisted personal calorie goal through
-shared Flutter state. Phase 7.8 connects Today and Weekly dashboard summaries to
-that shared state and uses saved nutrition snapshots grouped by device-local dates.
-Phase 7.7 and 7.8 physical iPhone verification passed, as did final end-to-end
-physical iPhone verification of the completed Phase 7 flow. The Profile-mode build,
-install, and launch succeeded. Phase 7 is COMPLETE after automated and physical
-verification. The documented closed-set limitation remains: unsupported foods and
-non-food objects may receive a supported-food prediction at confidence >= 0.55; it
-does not block completion. Image-based portion weight is not inferred. Phase 8 —
-Full Testing & Validation is COMPLETE; Phase 9 — Final Documentation is next, then
-Phase 10 — Demo & Submission.
+Final physical iPhone verification confirmed legacy meals and the daily goal,
+persisted meal photos, add/edit/remove, goal updates, Today/Weekly summaries,
+force-close/relaunch persistence, Camera/Gallery classification, nutrition and
+editable grams, classified meal persistence, and manual entry. Core app operation
+was verified offline. Android physical-device validation was not performed. The iOS
+LiteRT frameworks emit duplicate Objective-C class warnings; startup and tested
+inference completed, and no workaround has been applied.
 
-Phase 8 verification passed: `flutter analyze`; all 68 Flutter tests (including
-six classifier-boundary and four date/lifecycle tests); 17 nutrition verification
-tests; 13 Phase 6 regression tests; the MobileNetV3/TFLite verifier; the confidence
-evaluator self-test; and `git diff --check`. TFLite held-out accuracy remains
-88.12% on 2,719 images, with 38/39 representative TFLite/Keras top-1 matches.
-
-The confirmed local-day refresh defect was fixed with a shared lifecycle-resume
-check: Diary Today and Dashboard Today/Weekly refresh only when the local calendar
-day changes. The refresh only notifies listeners and does not mutate or persist
-meals, goals, photos, or nutrition snapshots. Same-day resume does not notify.
-
-Final physical iPhone validation passed in Profile mode, including camera/gallery
-classification, nutrition/portion editing, Diary/Goal/Dashboard, force-quit and
-independent relaunch persistence for meals, goal, saved photo, and totals, plus
-offline operation with Airplane Mode and Wi-Fi disabled, including TFLite inference.
-Android build/runtime validation was not performed: no Android SDK, emulator,
-toolchain, or physical Android device was available. Android runtime is therefore
-unverified and is not claimed as passed; it does not block this MentorTechz
-deliverable. The iOS duplicate Objective-C class warnings between
-`LiteRt.framework` and `LiteRtMetalAccelerator.framework` were observed while the
-tested build, launch, and on-device inference completed successfully. No framework
-workaround was applied, and the warning has not been confirmed harmless.
+The final automated Flutter suite contains 74 passing tests. `flutter analyze`,
+nutrition verification (17 tests), Phase 6 regression verification (13 tests),
+TFLite verification, and `git diff --check` passed. The production TFLite files in
+`ml/artifacts/` and `mobile/assets/` have matching SHA-256 hashes.
 
 ## Environment and dependencies
 
@@ -76,7 +53,7 @@ food-calorie-estimator/
 ├── app/                       # Phase 6 domain/application services
 │   ├── models.py
 │   ├── repositories.py         # Persistence protocol
-│   ├── storage.py              # Atomic JSON repository adapter
+│   ├── storage.py              # Python Phase 6 JSON repository adapter
 │   ├── meal_log.py
 │   ├── goals.py
 │   ├── dashboard.py
@@ -124,8 +101,16 @@ food-calorie-estimator/
 │       ├── verify_evaluation.py
 │       ├── inference.py
 │       ├── predict.py
-│       └── verify_inference.py
+│       ├── verify_inference.py
+│       ├── robustness_data.py       # Experimental data utilities
+│       ├── robustness_metrics.py    # Experimental evaluation helpers
+│       ├── prepare_openimages_nonfood.py
+│       ├── train_robustness_candidate.py
+│       ├── train_food_nonfood_gate.py
+│       └── evaluate_phone_challenge.py
 ├── mobile/
+│   ├── lib/repositories/       # DiaryRepository, SQLite production adapter, JSON migration reader
+│   └── test/                   # Flutter feature and persistence tests
 ├── nutrition/
 │   ├── data/foods.json          # Versioned thirteen-class nutrition catalog
 │   ├── data/usda_source_extracts.json  # Selected USDA rows and archive hashes
@@ -336,9 +321,10 @@ still receive one of those ten labels.
 - Immutable `MealEntry` records preserve exact food ID, selected grams, calculated
   nutrients, timezone-aware timestamp, portion mode, and optional classifier
   confidence metadata. Confidence does not affect grams or nutrients.
-- `DiaryRepository` separates domain services from storage. The JSON adapter handles
-  missing initial files, validates loaded records, and writes atomically. Runtime
-  diary files under `app/data/` are Git-ignored.
+- The standalone Python Phase 6 layer keeps its JSON `DiaryRepository` adapter for
+  its own domain verifier. The Flutter production app uses the separately
+  implemented `DiaryRepository` abstraction with SQLite; these are distinct
+  persistence layers.
 - Daily summaries include calories/macros, meal count, goal, remaining calories,
   progress fraction, and over-goal state. Without a goal, goal-related values are
   `None`; when over goal, remaining calories are negative and progress may exceed 1.
@@ -347,7 +333,7 @@ still receive one of those ten labels.
   an explicit timezone and injectable clock for deterministic callers/tests.
 - `python -m app.verify_phase6` is the offline domain and persistence verifier.
 
-## Phase 7 — IMPLEMENTATION COMPLETE: Mobile App
+## Phase 7 — IMPLEMENTATION AND PHYSICAL IPHONE VERIFICATION COMPLETE
 
 - The separate assignment-required classifier is Keras MobileNetV3 Small, ImageNet
   initialized and fine-tuned on the unchanged Phase 5 13-class splits. Best
@@ -371,10 +357,19 @@ still receive one of those ten labels.
   parity with `nutrition/data/foods.json`.
 
 Phase 7.7 provides local meal snapshots, manual and photo meal entry, a daily goal,
-and diary details; its physical iPhone verification passed. Phase 7.8 provides a
-reactive Today dashboard and rolling seven-local-day Weekly dashboard; its physical
-iPhone verification passed. The final Phase 7 end-to-end physical iPhone flow was
-tested after a successful Profile-mode build, install, and launch. Phase 7 is
-complete. The closed-set limitation and 0.55 low-confidence threshold are documented
-in `docs/ML_PIPELINE.md`; the threshold is not a food-vs-non-food detector. Preserve
-the Phase 3 and Phase 5 EfficientNet artifacts and historical metrics.
+and diary details. Phase 7.8 provides a reactive Today dashboard and rolling
+seven-local-day Weekly dashboard. Production Flutter persistence is `sqflite` in a
+versioned app-private SQLite database (`meals`, `goals`, and `app_metadata` tables,
+with a timestamp index). On first use it safely imports the legacy JSON diary in a
+transaction, records completion only after successful writes, and retains the
+original JSON file. Automated SQLite migration tests and physical iPhone
+verification are complete. The physical check confirmed old meals, goal and photos
+survived migration, all supported add/edit/remove flows, dashboards, force-close/
+relaunch persistence, manual entry, Camera/Gallery classification, and editable
+nutrition portions.
+
+The deployed model and app behavior are described in `docs/ML_PIPELINE.md`. Keep
+the historical EfficientNet artifacts/results distinct from MobileNetV3 TFLite.
+Rejected robustness experiments are not production features; only their source
+scripts are retained for reproducibility, while datasets/checkpoints/reports remain
+Git-ignored.

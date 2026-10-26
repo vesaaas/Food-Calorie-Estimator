@@ -140,3 +140,23 @@ portion validation as the Python calculator. Confidence remains display metadata
 does not alter nutrition, and image pixels are not used to estimate food weight.
 The values remain representative estimates for each catalog mapping. This phase
 does not persist meal entries.
+
+## Phase 7.7–7.8 Flutter persistence and dashboards
+
+The production Flutter app persists diary state with `sqflite` in an app-private,
+versioned SQLite database. `SqliteDiaryRepository` implements the existing
+`DiaryRepository` boundary. `meals` preserves the current meal snapshot fields,
+including food ID/display name, timestamp, portion, saved nutrition values,
+classifier confidence, and photo reference. `goals` stores the daily calorie goal;
+`app_metadata` stores the one-time JSON migration marker. A timestamp index supports
+date-oriented meal reads.
+
+On first access, the repository validates and imports the prior app-private
+`food_calorie_diary.json` into SQLite in a transaction. The marker is committed only
+after all database writes succeed. The source JSON is retained and migration is
+idempotent. Meal photos remain in app-private storage and their safe references
+remain attached to the migrated meal records. This storage is local and fully
+offline. Automated migration/persistence tests and physical iPhone verification
+confirmed meals, goal, photos, add/edit/remove, dashboards, and force-close/relaunch
+behavior. The separate Python Phase 6 services still use their JSON adapter; that
+is not the Flutter app's production storage.
