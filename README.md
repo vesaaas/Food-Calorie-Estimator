@@ -1,144 +1,111 @@
 # Food Calorie Estimator
 
-A fully offline Flutter app that classifies meal photos into 13 supported food
-classes, calculates a representative nutrition estimate, and keeps a local meal
-diary with daily and weekly summaries. It runs MobileNetV3 Small through TensorFlow
-Lite on-device; it does not send images or diary data to a service.
+Food Calorie Estimator is an offline-first Flutter app that recognizes meals from
+photos, estimates nutrition from a curated food catalog, and keeps a local meal
+diary. Classification runs on the device. Users can adjust the portion size,
+review the resulting nutrition estimate, and track daily and weekly intake.
 
-## Features
+## Key features
 
-- Capture a meal with Camera or choose an image from Gallery.
-- Classify one of 13 supported foods with the bundled MobileNetV3 Small TFLite model.
-- Look up calories, protein, carbohydrates, and fat in a locally bundled catalog
-  based on USDA FoodData Central and regional Turkish-food references.
-- Start from a reference serving or edit the portion in grams. The app does not
-  estimate portion weight from pixels.
-- Add, edit, and remove meal records; preserve meal photos in app-private storage.
-- Add a supported food manually without running image classification.
-- Set a daily calorie goal and view Today and rolling seven-day Weekly dashboards.
-- Persist meals and the goal locally with SQLite; no account or network connection
-  is required for the core app.
+- Capture a photo or choose one from the gallery for food recognition.
+- Run MobileNetV3 Small through TensorFlow Lite on-device across 13 supported foods.
+- Look up calories, protein, carbohydrates, and fat in a USDA-based local catalog,
+  with sourced references for regional foods.
+- Edit portion size in grams; weight is not inferred from the image.
+- Add foods manually, then add, edit, or remove meals from the diary.
+- Set a daily calorie goal and review Today and rolling seven-day Weekly dashboards.
+- Persist meal snapshots, goals, and photo references locally with SQLite.
+- Use core app workflows without an account or network connection.
+
+## Architecture
+
+```text
+Camera / gallery image → TFLite classifier → food class → nutrition catalog
+  → editable grams → SQLite meal snapshot → diary and dashboards
+```
+
+The Flutter app uses `sqflite` and a versioned app-private database. `meals` stores
+nutrition snapshots and meal metadata, `goals` stores the daily calorie goal, and
+`app_metadata` records migration state. Meal photos are kept in app-private
+Application Support storage and referenced by their meal records. Today and Weekly
+summaries are calculated from locally persisted meals. A one-time transactional
+migration imports an existing JSON diary when present; JSON is not the production
+storage mechanism.
+
+## AI/ML model
+
+The production mobile classifier is **MobileNetV3 Small**, developed with
+TensorFlow/Keras and exported to TensorFlow Lite for on-device inference. On the
+held-out 13-class test set of **2,719 images**, the deployed TFLite model achieved
+**88.12% top-1 accuracy**. The input is RGB, resized with the shortest edge at 256
+pixels, then center-cropped to 224×224.
+
+The app uses **0.55** as a low-confidence handling threshold. It prompts users to
+retry below that value; it does not detect non-food or unsupported foods. Historical
+EfficientNet-B0 experiments are documented separately and are not the production
+mobile model.
 
 ## Supported foods
 
 `pizza`, `hamburger`, `sushi`, `steak`, `ice_cream`, `donuts`, `omelette`,
-`french_fries`, `chicken_wings`, `spaghetti_bolognese`, `borek`, `kebap`, and
-`sarma`.
+`french_fries`, `chicken_wings`, `spaghetti_bolognese`, `borek`, `kebap`, `sarma`.
 
-## Architecture
+## Technology stack
 
-~~~text
-Camera / Gallery ──> MobileNetV3 Small TFLite ──> supported food label
-                                                    │
-Manual food selection ──────────────────────────────┤
-                                                    ↓
-                                  local nutrition catalog + editable grams
-                                                    ↓
-                                 saved meal snapshot + app-private photo
-                                                    ↓
-                             SQLite repository → Diary / Today / Weekly / Goal
-~~~
+- Python, TensorFlow/Keras, TensorFlow Lite, and torchvision for ML data and evaluation
+- Flutter and Dart for the mobile application
+- SQLite through `sqflite` for local persistence
+- Food-101 and selected TurkishFoods-25 classes for model development
+- USDA FoodData Central and documented regional references for nutrition data
+- Git and GitHub for version control and project hosting
 
-The Flutter app uses `sqflite` with a versioned local database. The `meals` table
-stores each nutrition snapshot, timestamp, classifier confidence metadata, portion
-mode, and photo reference. The `goals` table stores the daily calorie goal;
-`app_metadata` records successful one-time migrations. A timestamp index supports
-date-oriented queries. The shared `DiaryRepository` boundary keeps persistence
-behind the `DiaryController`.
+## Testing and validation
 
-On first access, the SQLite repository validates and imports the prior
-`food_calorie_diary.json` file in one database transaction. It marks migration
-complete only after the meal and goal writes succeed. The original JSON file is
-preserved, and the migration marker prevents importing it again. Nutrition values
-are saved as a snapshot when a meal is logged, so later catalog changes do not
-rewrite diary history. Photo files stay in app-private Application Support storage;
-SQLite retains their safe app-owned references.
+- `flutter analyze` completed cleanly; **74 Flutter tests** passed.
+- Nutrition catalog verification passed **17 checks**.
+- Python meal, goal, and dashboard regression verification passed **13 checks**.
+- The production TFLite verifier evaluated all 2,719 held-out images.
+- Manual physical-device validation was performed on iPhone, including offline use,
+  camera/gallery inference, SQLite migration, meal/photo/goal persistence, and both
+  dashboards. Android physical-device validation was not performed.
 
-## Machine learning and evaluation
+## Limitations
 
-The production model is MobileNetV3 Small exported to TFLite. On the 2,719-image
-held-out 13-class test split, TFLite top-1 accuracy was **88.12%**. The model accepts
-RGB float32 images resized by shortest edge to 256 pixels and center-cropped to
-224×224; the bundled model performs its own input rescaling. The app keeps a 0.55
-low-confidence policy: predictions below that value prompt the user to retry. This
-cutoff is not a food/non-food detector or a general unsupported-food detector.
+The classifier is closed-set: unsupported foods and non-food images may be assigned
+to one of the 13 supported classes, including with high confidence. The 0.55 policy
+only handles low-confidence predictions and is not an open-set detector. Portion
+weight is entered by the user rather than inferred from an image. Nutrition values
+are estimates based on representative reference foods and do not capture every
+recipe or preparation method.
 
-EfficientNet-B0 is historical, not the deployed mobile model. The original
-10-class Phase 3 test result was **94.48% on 2,500 images**. The separate 13-class
-Phase 5 EfficientNet experiment scored 95.66% on its mixed test split; results from
-different class sets and experiments are not direct comparisons. A later
-MobileNetV3 robustness fine-tuning candidate reached 88.23% on the same held-out
-split but regressed on 7 of 13 classes, so it was rejected. Three-way triage and
-binary food/non-food experiments were also rejected and are not part of the app.
+## Running the project
 
-The 13-class model is closed-set: an unsupported food such as cake or a non-food
-object can still be assigned a supported label, sometimes with high confidence.
-Nutrition values represent reference foods and portions; they are not laboratory
-measurements of the photographed meal.
+Install the mobile dependencies and launch from the project root:
 
-## Technology
-
-- Flutter / Dart mobile client
-- TensorFlow Lite via `flutter_litert`
-- MobileNetV3 Small image classifier
-- SQLite via `sqflite`
-- USDA FoodData Central and regional-food nutrition references
-- Python, PyTorch, TensorFlow, and torchvision for the dataset/model pipeline and
-  offline verification
-
-## Setup and run
-
-Python tooling (needed for ML and nutrition verification):
-
-~~~bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-~~~
-
-Run the mobile app with Flutter (and Xcode for a physical iPhone):
-
-~~~bash
+```bash
 cd mobile
 flutter pub get
 flutter run
-~~~
+```
 
-The production TFLite asset is bundled at
-`mobile/assets/models/mobilenet_v3_small_phase7_v2.tflite`. The ordered label list
-and input contract are in `ml/mobile/`.
+For Python ML and nutrition tooling, use Python 3.12 and install the pinned project
+requirements:
 
-## Verification
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
 
-~~~bash
-cd mobile
-flutter analyze
-flutter test
-cd ..
-python nutrition/src/verify_nutrition.py
-python -m app.verify_phase6
-python -m ml.src.verify_mobilenet_v3
-~~~
+The production model is bundled at
+`mobile/assets/models/mobilenet_v3_small_phase7_v2.tflite`; its ordered labels and
+input contract are under `ml/mobile/`.
 
-The Flutter suite covers persistence, migration, diary, goals, dashboards,
-classification boundaries, and photo handling. The nutrition verifier checks the
-bundled catalog against its canonical data; the Phase 6 Python verifier protects
-the standalone Python domain services.
+## Documentation
 
-## Validation and limitations
-
-The current app passed automated Flutter, nutrition, and Phase 6 checks and was
-manually verified on a physical iPhone, including SQLite migration, meal/photo and
-goal persistence across force-close/relaunch, Camera/Gallery classification,
-editable grams, manual entry, and Today/Weekly dashboards. Core flows were also
-checked offline. Android physical-device validation has not been performed.
-
-The classifier recognizes only the 13 listed classes. Unsupported foods and
-non-food images may map to a supported class; 0.55 only rejects low-confidence
-predictions. Image-based portion-size estimation is not implemented. iOS logs
-duplicate Objective-C class warnings from the bundled LiteRT frameworks; no
-workaround has been applied.
-
-See [the roadmap](docs/ROADMAP.md), [architecture](docs/ARCHITECTURE.md),
-[ML pipeline](docs/ML_PIPELINE.md), [nutrition data](docs/NUTRITION.md), and
-[dataset notes](docs/DATASET.md) for implementation and evaluation details.
+- [Architecture](docs/ARCHITECTURE.md)
+- [Current production state](docs/CURRENT_STATE.md)
+- [ML pipeline and evaluation](docs/ML_PIPELINE.md)
+- [Nutrition methodology](docs/NUTRITION.md)
+- [Dataset details](docs/DATASET.md)
+- [Engineering roadmap](docs/ROADMAP.md)
