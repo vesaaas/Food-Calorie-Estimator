@@ -16,7 +16,9 @@ mobile integration, local persistence, and validation.
 
 ## Future improvements
 
-- Evaluate Android physical-device behavior across a representative range of devices.
+- Evaluate Android behavior across a representative range of devices. The release APK
+  was built, installed, launched, and smoke-tested on one physical Samsung SM A515F
+  (Android 13 / API 33, ARM64); broader device coverage remains future work.
 - Explore a validated open-set or food/non-food approach that preserves supported-food
   coverage before integrating any rejection behavior.
 - Investigate image-based portion estimation as a separate capability with suitable

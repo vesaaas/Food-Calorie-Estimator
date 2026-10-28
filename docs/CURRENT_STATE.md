@@ -33,7 +33,9 @@ derived from persisted meals.
 - The production TFLite verifier covered the full 2,719-image test split.
 - Physical iPhone validation covered inference, nutrition and portions, diary,
   dashboards, migration, persistence across relaunch, and offline workflows.
-- Android physical-device validation was not performed.
+- The release APK was built, installed, launched, and smoke-tested on a physical
+  Samsung SM A515F running Android 13 (API 33, ARM64). This validates the tested
+  device only; it does not establish compatibility across all Android devices.
 
 ## Limitations
 

@@ -52,4 +52,7 @@ flutter test
 The current suite has 74 passing tests. Physical iPhone validation covered camera
 and gallery classification, nutrition, editable grams, meal and photo persistence,
 SQLite migration, goals, dashboards, relaunch persistence, and offline workflows.
-Android physical-device validation has not been performed.
+The release APK was also built, installed, launched, and smoke-tested on a physical
+Samsung SM A515F running Android 13 (API 33, ARM64). This validates the tested device
+only; broader Android device compatibility has not been established. See the root
+README for the APK download instructions and checksum.

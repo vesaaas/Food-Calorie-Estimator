@@ -67,7 +67,28 @@ mobile model.
 - The production TFLite verifier evaluated all 2,719 held-out images.
 - Manual physical-device validation was performed on iPhone, including offline use,
   camera/gallery inference, SQLite migration, meal/photo/goal persistence, and both
-  dashboards. Android physical-device validation was not performed.
+  dashboards.
+- The release APK was built, installed, launched, and smoke-tested on a physical
+  Samsung SM A515F running Android 13 (API 33, ARM64). This confirms the tested
+  device only and does not establish compatibility across all Android devices.
+
+## Android APK
+
+An installable Android APK is available through
+[GitHub Releases](https://github.com/vesaaas/Food-Calorie-Estimator/releases/download/v1.0.0/app-release.apk).
+
+To install it on an Android device:
+
+1. Download the APK on the device.
+2. Open the downloaded APK.
+3. If prompted, allow the browser or file manager to install apps.
+4. Install and open Food Calorie Estimator.
+
+The validated release APK SHA-256 is:
+
+```text
+0aadd6c4e112d788e83201f45d0473f9c3488ab3b3d1f1c845737fbb50fa6c39
+```
 
 ## Limitations
 
