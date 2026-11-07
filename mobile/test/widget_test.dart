@@ -208,6 +208,31 @@ void main() {
     );
     expect(find.byKey(const Key('dashboard-chart-scale')), findsOneWidget);
     expect(
+      find.byKey(const Key('dashboard-protein-chart-scale')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('dashboard-carbohydrates-chart-scale')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('dashboard-fat-chart-scale')), findsOneWidget);
+    expect(
+      find.byKey(const Key('dashboard-protein-bar-2026-10-22')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('dashboard-carbohydrates-bar-2026-10-22')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('dashboard-fat-bar-2026-10-22')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('dashboard-macro-distribution-empty')),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const Key('dashboard-day-bar-2026-10-16')),
       findsOneWidget,
     );
@@ -255,6 +280,51 @@ void main() {
     expect(find.byKey(const Key('dashboard-chart-scale')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'Weekly macro charts and energy distribution fit narrow screens',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final meal = MealEntry(
+        mealId: 'macro-meal',
+        foodId: 'pizza',
+        displayName: 'Pizza',
+        loggedAt: DateTime.utc(2026, 10, 22, 10),
+        portionGrams: 100,
+        portionMode: 'grams',
+        caloriesKcal: 1000,
+        proteinGrams: 25,
+        carbohydratesGrams: 50,
+        fatGrams: 20,
+      );
+      await launchApp(tester, initialDiaryState: DiaryState(meals: [meal]));
+      await tester.tap(find.text('Dashboard').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Weekly'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('dashboard-protein-bar-2026-10-22')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('dashboard-macro-distribution-chart')),
+        findsOneWidget,
+      );
+      expect(find.text('Estimated macro-energy distribution'), findsOneWidget);
+      expect(
+        find.textContaining('not percentages of total logged calories'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Protein 20.8%'), findsOneWidget);
+      expect(find.textContaining('Carbohydrates 41.7%'), findsOneWidget);
+      expect(find.textContaining('Fat 37.5%'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('Take Photo invokes camera and previews the selected image', (
     tester,

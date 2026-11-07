@@ -29,6 +29,13 @@ class DashboardSummaryService {
       dailyGoal: controller.dailyCalorieGoal,
       week: List.unmodifiable(week),
       weeklyCalories: _finiteSum(week.map((item) => item.totals.caloriesKcal)),
+      weeklyProteinGrams: _finiteSum(
+        week.map((item) => item.totals.proteinGrams),
+      ),
+      weeklyCarbohydratesGrams: _finiteSum(
+        week.map((item) => item.totals.carbohydratesGrams),
+      ),
+      weeklyFatGrams: _finiteSum(week.map((item) => item.totals.fatGrams)),
       weeklyMealCount: week.fold<int>(
         0,
         (count, item) => count + item.totals.mealCount,

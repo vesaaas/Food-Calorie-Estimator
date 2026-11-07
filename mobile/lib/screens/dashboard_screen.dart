@@ -309,9 +309,259 @@ class _WeeklyContent extends StatelessWidget {
           const SizedBox(height: 12),
           const _EmptyNote(text: 'No meals logged in the past 7 days.'),
         ],
+        const SizedBox(height: 14),
+        _WeeklyMacroChart(
+          title: 'Protein',
+          unit: 'g',
+          valueFor: (day) => day.totals.proteinGrams,
+          days: summary.week,
+          color: Theme.of(context).colorScheme.primary,
+          chartKey: 'protein',
+        ),
+        const SizedBox(height: 12),
+        _WeeklyMacroChart(
+          title: 'Carbohydrates',
+          unit: 'g',
+          valueFor: (day) => day.totals.carbohydratesGrams,
+          days: summary.week,
+          color: Theme.of(context).colorScheme.tertiary,
+          chartKey: 'carbohydrates',
+        ),
+        const SizedBox(height: 12),
+        _WeeklyMacroChart(
+          title: 'Fat',
+          unit: 'g',
+          valueFor: (day) => day.totals.fatGrams,
+          days: summary.week,
+          color: Theme.of(context).colorScheme.secondary,
+          chartKey: 'fat',
+        ),
+        const SizedBox(height: 12),
+        _MacroEnergyDistributionCard(summary: summary),
       ],
     );
   }
+}
+
+class _WeeklyMacroChart extends StatelessWidget {
+  const _WeeklyMacroChart({
+    required this.title,
+    required this.unit,
+    required this.valueFor,
+    required this.days,
+    required this.color,
+    required this.chartKey,
+  });
+
+  final String title;
+  final String unit;
+  final double Function(DashboardDaySummary day) valueFor;
+  final List<DashboardDaySummary> days;
+  final Color color;
+  final String chartKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxValue = days.fold<double>(
+      0,
+      (maximum, day) => math.max(maximum, valueFor(day)),
+    );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Daily total ($unit)',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    '${_number(maxValue)} $unit max',
+                    key: Key('dashboard-$chartKey-chart-scale'),
+                    textAlign: TextAlign.end,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 112,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final day in days)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: 20,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  _number(valueFor(day)),
+                                  key: Key(
+                                    'dashboard-$chartKey-value-${_dateKey(day.day)}',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: FractionallySizedBox(
+                                  heightFactor: maxValue == 0
+                                      ? 0
+                                      : (valueFor(day) / maxValue).clamp(0, 1),
+                                  widthFactor: 0.62,
+                                  child: DecoratedBox(
+                                    key: Key(
+                                      'dashboard-$chartKey-bar-${_dateKey(day.day)}',
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: valueFor(day) == 0
+                                          ? Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                          : color,
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(5),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              _weekday(day.day),
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MacroEnergyDistributionCard extends StatelessWidget {
+  const _MacroEnergyDistributionCard({required this.summary});
+
+  final DashboardSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final distribution = summary.weeklyMacroEnergyDistribution;
+    final macroEnergyKcal = summary.weeklyMacroEnergyKcal;
+    final colors = Theme.of(context).colorScheme;
+    final entries = <(String, double, Color)>[
+      ('Protein', distribution?.protein ?? 0, colors.primary),
+      ('Carbohydrates', distribution?.carbohydrates ?? 0, colors.tertiary),
+      ('Fat', distribution?.fat ?? 0, colors.secondary),
+    ];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Estimated macro-energy distribution',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Share of energy from logged protein, carbohydrates, and fat',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 14),
+            if (distribution == null)
+              const Text(
+                'No macro energy logged yet.',
+                key: Key('dashboard-macro-distribution-empty'),
+              )
+            else ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: SizedBox(
+                  height: 20,
+                  child: Row(
+                    key: const Key('dashboard-macro-distribution-chart'),
+                    children: [
+                      for (final entry in entries)
+                        if (entry.$2 > 0)
+                          Expanded(
+                            flex: _macroShareFlex(entry.$2),
+                            child: ColoredBox(color: entry.$3),
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 14,
+                runSpacing: 8,
+                children: [
+                  for (final entry in entries)
+                    SizedBox(
+                      width: 132,
+                      child: Row(
+                        children: [
+                          Container(width: 10, height: 10, color: entry.$3),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              '${entry.$1} ${(entry.$2 * 100).toStringAsFixed(1)}%',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                macroEnergyKcal == null
+                    ? 'Estimated macro energy exceeds the display range'
+                    : '${_number(macroEnergyKcal)} estimated macro kcal',
+                key: const Key('dashboard-macro-energy-total'),
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              'Estimated using 4 kcal/g for protein and carbohydrates, and 9 kcal/g for fat. These are not percentages of total logged calories.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+int _macroShareFlex(double share) {
+  if (!share.isFinite || share <= 0) return 1;
+  return (share.clamp(0, 1) * 10000).round().clamp(1, 10000);
 }
 
 class _WeeklyBarChart extends StatelessWidget {
