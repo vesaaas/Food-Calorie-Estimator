@@ -6,6 +6,7 @@ import 'package:food_calorie_estimator/services/food_classification_service.dart
 import 'package:image/image.dart' as img;
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late Directory directory;
 
   setUp(() async {
@@ -67,21 +68,49 @@ void main() {
     }
   });
 
-  test('maps every output index to its exact canonical class', () async {
-    for (var index = 0; index < foodClassNames.length; index++) {
+  test('maps the 14 outputs in the exact model label order', () async {
+    expect(foodModelClassNames, [...foodClassNames, 'non_food']);
+    for (var index = 0; index < foodModelClassNames.length; index++) {
       final runner = _RecordingRunner(_scoresFor(index, 0.73));
       final result = await _classify(directory, _solidImage(), runner);
 
-      expect(result.food, foodClassNames[index], reason: 'output index $index');
+      if (index == foodClassNames.length) {
+        expect(result.isNonFood, isTrue);
+        expect(result.food, isNull);
+      } else {
+        expect(result.isNonFood, isFalse);
+        expect(
+          result.food,
+          foodClassNames[index],
+          reason: 'output index $index',
+        );
+      }
       expect(result.confidence, 0.73, reason: 'output index $index');
     }
   });
 
+  test('supported argmax is accepted regardless of confidence', () async {
+    final scores = List<double>.filled(foodModelClassNames.length, 0.07115)
+      ..[2] = 0.075;
+    final result = await _classify(
+      directory,
+      _solidImage(),
+      _RecordingRunner(scores),
+    );
+
+    expect(result.food, 'sushi');
+    expect(result.isNonFood, isFalse);
+    expect(result.confidence, 0.075);
+  });
+
   test('selects the maximum score, not the first or last output', () async {
-    final scores = List<double>.filled(foodClassNames.length, 0.01);
-    scores[2] = 0.42;
+    final scores = List<double>.filled(foodModelClassNames.length, 0.01);
+    scores[2] = 0.04;
     scores[10] = 0.88;
-    scores[12] = 0.17;
+    scores[12] = 0.03;
+    for (var i = 0; i < scores.length; i++) {
+      if (i != 2 && i != 10 && i != 12) scores[i] = 0.05 / 11;
+    }
     final result = await _classify(
       directory,
       _solidImage(),
@@ -92,13 +121,16 @@ void main() {
     expect(result.confidence, 0.88);
   });
 
-  test('rejects output with the wrong length or non-finite scores', () async {
+  test('rejects malformed probabilities and non-finite scores', () async {
     for (final scores in [
-      List<double>.filled(foodClassNames.length - 1, 0.1),
-      List<double>.filled(foodClassNames.length + 1, 0.1),
+      List<double>.filled(foodModelClassNames.length - 1, 1 / 14),
+      List<double>.filled(foodModelClassNames.length + 1, 1 / 15),
       [..._scoresFor(0, 0.8)..[4] = double.nan],
       [..._scoresFor(0, 0.8)..[4] = double.infinity],
       [..._scoresFor(0, 0.8)..[4] = double.negativeInfinity],
+      [..._scoresFor(0, 0.8)..[4] = -0.01],
+      [..._scoresFor(0, 0.8)..[4] = 1.01],
+      List<double>.filled(foodModelClassNames.length, 0.1),
     ]) {
       await expectLater(
         _classify(directory, _solidImage(), _RecordingRunner(scores)),
@@ -120,6 +152,22 @@ void main() {
         throwsA(isA<FormatException>()),
       );
       expect(runner.calls, 0);
+    },
+  );
+
+  test(
+    'versioned TFLite asset loads its 14 labels and rejects non-food',
+    () async {
+      final image = File('test/fixtures/phase9_6a/landscape.png');
+      expect(image.existsSync(), isTrue);
+
+      final result = await OnDeviceFoodClassificationService(
+        modelRunner: TfliteFoodModelRunner(),
+      ).classifyImage(image.path);
+
+      expect(result.isNonFood, isTrue);
+      expect(result.food, isNull);
+      expect(result.confidence, inInclusiveRange(0, 1));
     },
   );
 }
@@ -146,8 +194,8 @@ img.Image _solidImage() {
 }
 
 List<double> _scoresFor(int index, double score) => List<double>.filled(
-  foodClassNames.length,
-  (1 - score) / (foodClassNames.length - 1),
+  foodModelClassNames.length,
+  (1 - score) / (foodModelClassNames.length - 1),
 )..[index] = score;
 
 class _RecordingRunner implements FoodModelRunner {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -74,6 +75,35 @@ void main() {
         .whereType<String>()
         .toList();
     fail('Timed out waiting for $finder. Texts: $visibleTexts');
+  }
+
+  Future<void> confirmCurrentFood(WidgetTester tester) async {
+    final confirmButton = find.byKey(const Key('confirm-food-button'));
+    await pumpUntilVisible(tester, confirmButton);
+    final scrollable = find.descendant(
+      of: find.byKey(const Key('scan-screen-scroll')),
+      matching: find.byType(Scrollable),
+    );
+    final position = tester.state<ScrollableState>(scrollable).position;
+    final viewport = tester.getRect(
+      find.byKey(const Key('scan-screen-scroll')),
+    );
+    final target = tester.getRect(confirmButton);
+    final adjustment = target.bottom > viewport.bottom - 12
+        ? target.bottom - (viewport.bottom - 12)
+        : target.top < viewport.top + 12
+        ? target.top - (viewport.top + 12)
+        : 0.0;
+    if (adjustment != 0) {
+      position.jumpTo(
+        (position.pixels + adjustment)
+            .clamp(0, position.maxScrollExtent)
+            .toDouble(),
+      );
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(confirmButton);
+    await tester.pumpAndSettle();
   }
 
   Future<void> scrollToTop(WidgetTester tester) async {
@@ -330,7 +360,12 @@ void main() {
     tester,
   ) async {
     final picker = FakeImageAcquisitionService(cameraResult: testImage);
-    await launchApp(tester, imageAcquisitionService: picker);
+    final nutrition = CountingFoodNutritionService(testNutritionCatalog);
+    await launchApp(
+      tester,
+      imageAcquisitionService: picker,
+      foodNutritionService: nutrition,
+    );
 
     await tester.ensureVisible(find.text('Take Photo'));
     await tester.pumpAndSettle();
@@ -341,8 +376,19 @@ void main() {
     expect(find.byKey(const Key('selected-meal-image')), findsOneWidget);
     expect(find.text('Photo ready for analysis'), findsOneWidget);
     expect(find.text('Predicted food: pizza'), findsOneWidget);
-    expect(find.text('Confidence: 91.0%'), findsOneWidget);
+    expect(
+      find.text('Model confidence (informational): 91.0%'),
+      findsOneWidget,
+    );
+    expect(find.text('Is this the correct food?'), findsOneWidget);
+    expect(find.byKey(const Key('nutrition-details')), findsNothing);
+    expect(find.byKey(const Key('add-meal-button')), findsNothing);
+    expect(nutrition.calls, 0);
+
+    await tester.tap(find.byKey(const Key('confirm-food-button')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('nutrition-details')), findsOneWidget);
+    expect(nutrition.calls, 1);
   });
 
   testWidgets('Choose from Gallery invokes gallery and previews the image', (
@@ -354,6 +400,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
     await scrollToTop(tester);
+    await confirmCurrentFood(tester);
     await pumpUntilVisible(tester, find.byKey(const Key('nutrition-details')));
     expect(picker.galleryCalls, 1);
     expect(picker.cameraCalls, 0);
@@ -367,7 +414,86 @@ void main() {
     expect(find.byKey(const Key('value-Calories')), findsOneWidget);
   });
 
-  testWidgets('low-confidence prediction is rejected without nutrition', (
+  testWidgets(
+    'non-food prediction is rejected without nutrition or diary save',
+    (tester) async {
+      final picker = FakeImageAcquisitionService(galleryResult: testImage);
+      final nutrition = CountingFoodNutritionService(testNutritionCatalog);
+      await launchApp(
+        tester,
+        imageAcquisitionService: picker,
+        foodClassificationService: FakeFoodClassificationService([
+          const FoodClassification.nonFood(confidence: 0.99),
+        ]),
+        foodNutritionService: nutrition,
+      );
+
+      await tester.ensureVisible(find.text('Choose from Gallery'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose from Gallery'));
+      await pumpUntilVisible(
+        tester,
+        find.byKey(const Key('non-food-rejection')),
+      );
+      expect(
+        find.text(
+          'This photo was identified as a non-food object. Please photograph a meal and try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Predicted food:'), findsNothing);
+      expect(find.byKey(const Key('nutrition-details')), findsNothing);
+      expect(find.byKey(const Key('add-meal-button')), findsNothing);
+      expect(nutrition.calls, 0);
+      expect(diaryRepository.saved.meals, isEmpty);
+      expect(find.text('Take Photo'), findsOneWidget);
+      expect(find.text('Choose from Gallery'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'non-food rejection can retry and accept low-score supported food',
+    (tester) async {
+      final picker = FakeImageAcquisitionService(galleryResult: testImage);
+      final nutrition = CountingFoodNutritionService(testNutritionCatalog);
+      final classifier = FakeFoodClassificationService([
+        const FoodClassification.nonFood(confidence: 0.99),
+        const FoodClassification(food: 'pizza', confidence: 0.05),
+      ]);
+      await launchApp(
+        tester,
+        imageAcquisitionService: picker,
+        foodClassificationService: classifier,
+        foodNutritionService: nutrition,
+      );
+
+      await tester.ensureVisible(find.text('Choose from Gallery'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose from Gallery'));
+      await pumpUntilVisible(
+        tester,
+        find.byKey(const Key('non-food-rejection')),
+      );
+      await tester.ensureVisible(find.text('Choose from Gallery'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose from Gallery'));
+      await confirmCurrentFood(tester);
+      await pumpUntilVisible(
+        tester,
+        find.byKey(const Key('nutrition-details')),
+      );
+      expect(find.text('Predicted food: pizza'), findsOneWidget);
+      expect(nutrition.calls, 1);
+      expect(find.byKey(const Key('add-meal-button')), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const Key('add-meal-button')));
+      await tester.tap(find.byKey(const Key('add-meal-button')));
+      await tester.pumpAndSettle();
+      expect(diaryRepository.saved.meals, hasLength(1));
+      expect(diaryRepository.saved.meals.single.foodId, 'pizza');
+    },
+  );
+
+  testWidgets('declined prediction can be marked unsupported safely', (
     tester,
   ) async {
     final picker = FakeImageAcquisitionService(galleryResult: testImage);
@@ -376,7 +502,7 @@ void main() {
       tester,
       imageAcquisitionService: picker,
       foodClassificationService: FakeFoodClassificationService([
-        const FoodClassification(food: 'donuts', confidence: 0.549),
+        const FoodClassification(food: 'pizza', confidence: 0.82),
       ]),
       foodNutritionService: nutrition,
     );
@@ -386,52 +512,108 @@ void main() {
     await tester.tap(find.text('Choose from Gallery'));
     await pumpUntilVisible(
       tester,
-      find.byKey(const Key('low-confidence-rejection')),
+      find.byKey(const Key('decline-food-button')),
     );
+    expect(find.byKey(const Key('nutrition-details')), findsNothing);
+    expect(nutrition.calls, 0);
+    await tester.tap(find.byKey(const Key('decline-food-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('retry-camera-button')), findsOneWidget);
+    expect(find.byKey(const Key('retry-gallery-button')), findsOneWidget);
     expect(
-      find.text(
-        'Unable to confidently identify this food. Please try another photo.',
-      ),
+      find.byKey(const Key('declined-manual-selection-button')),
       findsOneWidget,
     );
-    expect(find.text('Predicted food: donuts'), findsNothing);
+    await tester.tap(find.byKey(const Key('decline-unsupported-food-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('unsupported-food-message')), findsOneWidget);
     expect(find.byKey(const Key('nutrition-details')), findsNothing);
     expect(find.byKey(const Key('add-meal-button')), findsNothing);
     expect(nutrition.calls, 0);
-    expect(find.text('Take Photo'), findsOneWidget);
-    expect(find.text('Choose from Gallery'), findsOneWidget);
+    expect(diaryRepository.saved.meals, isEmpty);
   });
 
-  testWidgets('threshold prediction is accepted and rejected scan can retry', (
+  testWidgets('manual food picker lets the user decline unsupported food', (
     tester,
   ) async {
+    final nutrition = CountingFoodNutritionService(testNutritionCatalog);
+    await launchApp(tester, foodNutritionService: nutrition);
+    await tester.ensureVisible(find.byKey(const Key('add-manually-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-manually-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('manual-food-not-listed')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('unsupported-food-message')), findsOneWidget);
+    expect(find.byKey(const Key('nutrition-details')), findsNothing);
+    expect(find.byKey(const Key('add-meal-button')), findsNothing);
+    expect(nutrition.calls, 0);
+    expect(diaryRepository.saved.meals, isEmpty);
+  });
+
+  testWidgets('leaving Scan clears unconfirmed food state', (tester) async {
     final picker = FakeImageAcquisitionService(galleryResult: testImage);
     final nutrition = CountingFoodNutritionService(testNutritionCatalog);
-    final classifier = FakeFoodClassificationService([
-      const FoodClassification(food: 'donuts', confidence: 0.54),
-      const FoodClassification(food: 'pizza', confidence: 0.55),
-    ]);
     await launchApp(
       tester,
       imageAcquisitionService: picker,
-      foodClassificationService: classifier,
       foodNutritionService: nutrition,
     );
-
     await tester.ensureVisible(find.text('Choose from Gallery'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
     await pumpUntilVisible(
       tester,
-      find.byKey(const Key('low-confidence-rejection')),
+      find.byKey(const Key('food-confirmation-question')),
+    );
+
+    await tester.tap(find.text('Dashboard').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Scan').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('food-confirmation-question')), findsNothing);
+    expect(find.byKey(const Key('food-prediction')), findsNothing);
+    expect(find.byKey(const Key('nutrition-details')), findsNothing);
+    expect(find.byKey(const Key('add-meal-button')), findsNothing);
+    expect(nutrition.calls, 0);
+  });
+
+  testWidgets('late nutrition response cannot restore state after navigation', (
+    tester,
+  ) async {
+    final picker = FakeImageAcquisitionService(galleryResult: testImage);
+    final nutrition = DeferredFoodNutritionService();
+    await launchApp(
+      tester,
+      imageAcquisitionService: picker,
+      foodNutritionService: nutrition,
     );
     await tester.ensureVisible(find.text('Choose from Gallery'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
-    await pumpUntilVisible(tester, find.byKey(const Key('nutrition-details')));
-    expect(find.text('Predicted food: pizza'), findsOneWidget);
+    await pumpUntilVisible(
+      tester,
+      find.byKey(const Key('confirm-food-button')),
+    );
+    await tester.tap(find.byKey(const Key('confirm-food-button')));
+    await tester.pump();
     expect(nutrition.calls, 1);
-    expect(find.byKey(const Key('add-meal-button')), findsOneWidget);
+    expect(find.byKey(const Key('nutrition-details')), findsNothing);
+
+    await tester.tap(find.text('Dashboard').last);
+    await tester.pumpAndSettle();
+    nutrition.completer.complete(testNutritionCatalog.estimate('pizza'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Scan').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('food-confirmation-question')), findsNothing);
+    expect(find.byKey(const Key('nutrition-details')), findsNothing);
+    expect(find.byKey(const Key('add-meal-button')), findsNothing);
   });
 
   testWidgets('Reset Scan clears scan state and preserves Diary and Goal', (
@@ -460,7 +642,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
     await scrollToTop(tester);
+    await confirmCurrentFood(tester);
     await pumpUntilVisible(tester, find.byKey(const Key('nutrition-details')));
+    await scrollToTop(tester);
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('reset-scan-button')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('reset-scan-button')));
@@ -470,36 +655,33 @@ void main() {
     expect(find.text('Predicted food: pizza'), findsNothing);
     expect(find.byKey(const Key('nutrition-details')), findsNothing);
     expect(find.byKey(const Key('portion-grams')), findsNothing);
-    expect(find.byKey(const Key('low-confidence-rejection')), findsNothing);
+    expect(find.byKey(const Key('non-food-rejection')), findsNothing);
     expect(find.byKey(const Key('reset-scan-button')), findsNothing);
     expect(find.text('Your meal photo will appear here'), findsOneWidget);
     expect(diaryRepository.saved.meals, [savedMeal]);
     expect(diaryRepository.saved.dailyCalorieGoal, 1850);
   });
 
-  testWidgets('Reset Scan clears a low-confidence result', (tester) async {
+  testWidgets('Reset Scan clears a non-food rejection', (tester) async {
     final picker = FakeImageAcquisitionService(galleryResult: testImage);
     await launchApp(
       tester,
       imageAcquisitionService: picker,
       foodClassificationService: FakeFoodClassificationService([
-        const FoodClassification(food: 'donuts', confidence: 0.54),
+        const FoodClassification.nonFood(confidence: 0.54),
       ]),
     );
     await tester.ensureVisible(find.text('Choose from Gallery'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
-    await pumpUntilVisible(
-      tester,
-      find.byKey(const Key('low-confidence-rejection')),
-    );
+    await pumpUntilVisible(tester, find.byKey(const Key('non-food-rejection')));
 
     await scrollToTop(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('reset-scan-button')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('low-confidence-rejection')), findsNothing);
+    expect(find.byKey(const Key('non-food-rejection')), findsNothing);
     expect(find.byKey(const Key('selected-meal-image')), findsNothing);
     expect(find.byKey(const Key('reset-scan-button')), findsNothing);
     expect(find.text('Your meal photo will appear here'), findsOneWidget);
@@ -510,10 +692,12 @@ void main() {
     (tester) async {
       final picker = FakeImageAcquisitionService();
       final classifier = FakeFoodClassificationService();
+      final nutrition = CountingFoodNutritionService(testNutritionCatalog);
       await launchApp(
         tester,
         imageAcquisitionService: picker,
         foodClassificationService: classifier,
+        foodNutritionService: nutrition,
       );
 
       await tester.ensureVisible(find.byKey(const Key('add-manually-button')));
@@ -521,41 +705,27 @@ void main() {
       await tester.tap(find.byKey(const Key('add-manually-button')));
       await tester.pumpAndSettle();
       expect(find.text('Choose a supported food'), findsNWidgets(2));
-      for (final food in foodClassNames) {
-        final option = find.byKey(Key('manual-food-$food'));
-        await tester.scrollUntilVisible(
-          option,
-          160,
-          scrollable: find.descendant(
-            of: find.byType(BottomSheet),
-            matching: find.byType(Scrollable),
-          ),
-        );
-        expect(option, findsOneWidget);
-      }
-      expect(find.byKey(const Key('manual-food-cake')), findsNothing);
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('manual-food-french_fries')),
-        160,
-        scrollable: find.descendant(
-          of: find.byType(BottomSheet),
-          matching: find.byType(Scrollable),
-        ),
-      );
-      await tester.tap(find.byKey(const Key('manual-food-french_fries')));
+      await tester.tap(find.byKey(const Key('manual-food-pizza')));
       await tester.pumpAndSettle();
+      expect(find.text('User-selected food: Pizza'), findsOneWidget);
+      expect(find.text('Is this the correct food?'), findsOneWidget);
+      expect(find.byKey(const Key('nutrition-details')), findsNothing);
+      expect(nutrition.calls, 0);
+      expect(classifier.calls, 0);
+      await confirmCurrentFood(tester);
       await pumpUntilVisible(
         tester,
         find.byKey(const Key('nutrition-details')),
       );
+      expect(nutrition.calls, 1);
 
-      expect(find.text('Selected food: French Fries'), findsOneWidget);
+      expect(find.text('User-selected food: Pizza'), findsOneWidget);
       expect(
-        find.text('Default serving: 1 small fast food order (110 g)'),
+        find.text('Default serving: 1 piece, large pizza (132 g)'),
         findsOneWidget,
       );
-      expect(find.text('317.9 kcal'), findsOneWidget);
-      expect(find.text('Predicted food: french_fries'), findsNothing);
+      expect(find.text('357.7 kcal'), findsOneWidget);
+      expect(find.text('Predicted food: pizza'), findsNothing);
       expect(find.textContaining('Confidence:'), findsNothing);
       expect(classifier.calls, 0);
       expect(picker.cameraCalls, 0);
@@ -565,17 +735,17 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const Key('portion-grams')), '200');
       await tester.pumpAndSettle();
-      expect(find.text('578.0 kcal'), findsOneWidget);
+      expect(find.text('542.0 kcal'), findsOneWidget);
       await tester.ensureVisible(find.byKey(const Key('add-meal-button')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('add-meal-button')));
       await tester.pumpAndSettle();
 
       final savedMeal = diaryRepository.saved.meals.single;
-      expect(savedMeal.foodId, 'french_fries');
-      expect(savedMeal.displayName, 'French fries');
+      expect(savedMeal.foodId, 'pizza');
+      expect(savedMeal.displayName, 'Pizza');
       expect(savedMeal.portionGrams, 200);
-      expect(savedMeal.caloriesKcal, 578);
+      expect(savedMeal.caloriesKcal, 542);
       expect(savedMeal.classifierConfidence, isNull);
       expect(savedMeal.photoReference, isNull);
       expect(find.byKey(const Key('manual-food-selection')), findsNothing);
@@ -592,7 +762,7 @@ void main() {
         find.byKey(const Key('meal-thumbnail-placeholder-widget-meal')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('French fries'), findsNWidgets(2));
+      expect(find.text('Pizza'), findsNWidgets(2));
       expect(
         find.byKey(const Key('meal-detail-photo-placeholder')),
         findsOneWidget,
@@ -608,7 +778,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('manual-food-pizza')));
     await tester.pumpAndSettle();
-    await pumpUntilVisible(tester, find.byKey(const Key('nutrition-details')));
+    expect(find.byKey(const Key('food-confirmation-question')), findsOneWidget);
+    expect(find.byKey(const Key('nutrition-details')), findsNothing);
 
     await scrollToTop(tester);
     await tester.ensureVisible(find.byKey(const Key('reset-scan-button')));
@@ -641,6 +812,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Choose from Gallery'));
       await scrollToTop(tester);
+      await confirmCurrentFood(tester);
       await pumpUntilVisible(
         tester,
         find.byKey(const Key('nutrition-details')),
@@ -672,6 +844,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
     await scrollToTop(tester);
+    await confirmCurrentFood(tester);
     await pumpUntilVisible(tester, find.byKey(const Key('nutrition-details')));
 
     await tester.ensureVisible(find.byKey(const Key('portion-grams')));
@@ -706,6 +879,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
     await scrollToTop(tester);
+    await confirmCurrentFood(tester);
     await pumpUntilVisible(
       tester,
       find.text('Default serving: 1 piece, large pizza (132 g)'),
@@ -719,6 +893,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Take Photo'));
     await scrollToTop(tester);
+    await confirmCurrentFood(tester);
     await pumpUntilVisible(
       tester,
       find.text('Default serving: 1 small fast food order (110 g)'),
@@ -776,6 +951,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
     await scrollToTop(tester);
+    await confirmCurrentFood(tester);
     await pumpUntilVisible(tester, find.byKey(const Key('nutrition-details')));
 
     final field = find.byKey(const Key('portion-grams'));
@@ -823,6 +999,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
     await scrollToTop(tester);
+    await confirmCurrentFood(tester);
     await pumpUntilVisible(tester, find.byKey(const Key('nutrition-details')));
 
     await tester.ensureVisible(find.byKey(const Key('portion-grams')));
@@ -869,6 +1046,7 @@ void main() {
     await tester.ensureVisible(find.text('Choose from Gallery'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose from Gallery'));
+    await confirmCurrentFood(tester);
     await pumpUntilVisible(tester, find.byKey(const Key('nutrition-details')));
     diaryRepository.failNextSave = true;
 
@@ -1068,6 +1246,21 @@ class CountingFoodNutritionService implements FoodNutritionService {
     return Future.value(
       catalog.estimate(foodId, grams: grams, servings: servings),
     );
+  }
+}
+
+class DeferredFoodNutritionService implements FoodNutritionService {
+  final Completer<NutritionEstimate> completer = Completer<NutritionEstimate>();
+  int calls = 0;
+
+  @override
+  Future<NutritionEstimate> estimate(
+    String foodId, {
+    double? grams,
+    double? servings,
+  }) {
+    calls++;
+    return completer.future;
   }
 }
 

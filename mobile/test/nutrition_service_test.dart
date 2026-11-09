@@ -129,8 +129,8 @@ void main() {
   test('classifier confidence is not part of nutrition calculation', () async {
     const lowConfidence = FoodClassification(food: 'sarma', confidence: 0.01);
     const highConfidence = FoodClassification(food: 'sarma', confidence: 0.99);
-    final low = catalog.estimate(lowConfidence.food, grams: 125);
-    final high = catalog.estimate(highConfidence.food, grams: 125);
+    final low = catalog.estimate(lowConfidence.food!, grams: 125);
+    final high = catalog.estimate(highConfidence.food!, grams: 125);
     expect(low.portionGrams, high.portionGrams);
     expect(low.nutrients.energyKcal, high.nutrients.energyKcal);
     expect(low.nutrients.proteinGrams, high.nutrients.proteinGrams);

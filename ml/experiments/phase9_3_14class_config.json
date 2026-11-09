@@ -1,0 +1,101 @@
+{
+  "experiment": "phase9_3_14class_nonfood_transfer",
+  "description": "Isolated 14-way MobileNetV3 transfer-learning candidate; preparation only",
+  "manifest": "ml/data/processed/robustness_manifest_with_openimages.csv",
+  "supported_manifest_for_test_membership_check": "ml/data/processed/robustness_manifest_grouped.csv",
+  "openimages_qa": "ml/data/processed/openimages_nonfood/dataset_qa.json",
+  "initial_checkpoint": "ml/artifacts/mobilenet_v3_small_phase7_v2_best.keras",
+  "initial_checkpoint_metadata": "ml/artifacts/mobilenet_v3_small_phase7_v2_training.json",
+  "production_tflite_contract": "ml/mobile/mobilenet_v3_tflite_contract_v2.json",
+  "output_directory": "ml/artifacts/experiments/phase9_3_14class",
+  "classes": [
+    "pizza",
+    "hamburger",
+    "sushi",
+    "steak",
+    "ice_cream",
+    "donuts",
+    "omelette",
+    "french_fries",
+    "chicken_wings",
+    "spaghetti_bolognese",
+    "borek",
+    "kebap",
+    "sarma",
+    "non_food"
+  ],
+  "class_to_idx": {
+    "pizza": 0,
+    "hamburger": 1,
+    "sushi": 2,
+    "steak": 3,
+    "ice_cream": 4,
+    "donuts": 5,
+    "omelette": 6,
+    "french_fries": 7,
+    "chicken_wings": 8,
+    "spaghetti_bolognese": 9,
+    "borek": 10,
+    "kebap": 11,
+    "sarma": 12,
+    "non_food": 13
+  },
+  "split_policy": {
+    "train": "Only supported_food rows labeled by food_class and non_food rows labeled non_food; unsupported_food rows excluded from fitting.",
+    "validation": "Fit/selection examples are supported_food and non_food; unsupported_food remains a separately reported rejection group. Tune all choices on validation only.",
+    "test": "Use only after the candidate and all settings are frozen on validation. Report supported_food, non_food, and unsupported_food separately. Supported-food membership must exactly match the existing 2,719-image test set.",
+    "excluded": "Never use duplicate_label_conflict rows. Preserve their manifest exclusion status.",
+    "unsupported_food": "Never relabel unsupported foods as non_food; use them only as an explicitly named validation/test evaluation group."
+  },
+  "training_plan": {
+    "input_contract": "224x224 RGB float32 [0,255], NHWC; preserve embedded MobileNetV3 [-1,1] rescaling and production resize/crop contract.",
+    "initialization": "Load the existing 13-class Keras checkpoint, retain its MobileNetV3 feature extractor and preprocessing, replace only the final 13-way classification layer with a new 14-way softmax head.",
+    "phase_1": {
+      "backbone": "frozen",
+      "epochs": 3,
+      "batch_size": 32,
+      "learning_rate": 0.001,
+      "optimizer": "Adam",
+      "loss": "sparse categorical cross-entropy with inverse-frequency per-class sample weights"
+    },
+    "phase_2_if_validation_justifies": {
+      "backbone": "unfreeze only the final 20 percent of MobileNetV3 layers; keep BatchNormalization layers frozen",
+      "epochs": 2,
+      "batch_size": 24,
+      "learning_rate": 0.00001,
+      "optimizer": "Adam",
+      "loss": "sparse categorical cross-entropy with inverse-frequency per-class sample weights"
+    },
+    "augmentation": [
+      "horizontal flip",
+      "small rotation up to 0.04",
+      "small zoom up to 10 percent",
+      "moderate contrast up to 0.15",
+      "moderate brightness up to 0.12"
+    ],
+    "balancing": "Use every available training row with normalized inverse-frequency class weights; do not duplicate or synthetically inflate the broad non_food class. Review per-scene-tag results for concentration."
+  },
+  "acceptance_targets": {
+    "source": "Project engineering targets, not reviewer-specified requirements.",
+    "supported_food_acceptance_overall_min": 0.97,
+    "supported_food_acceptance_each_class_min": 0.95,
+    "non_food_rejection_min": 0.80,
+    "unsupported_food_rejection_min": 0.50,
+    "supported_classification_accuracy_max_drop_absolute": 0.02,
+    "classification_comparison": "Compare 14-way top-1 accuracy on supported foods against the frozen 13-class production model on the same supported split. Acceptance means prediction is any supported food class; classification accuracy additionally requires the predicted food class to be correct.",
+    "production_tflite_reference_accuracy": 0.8812063258550937,
+    "production_tflite_reference_artifact": "ml/artifacts/mobilenet_v3_small_phase7_v2_tflite_verification.json",
+    "minimum_supported_test_top1_accuracy_if_test_gate_is_reached": 0.8612063258550937,
+    "test_policy": "Do not use test measurements for model, epoch, augmentation, or threshold selection. Evaluate test once after all candidate choices are frozen on validation."
+  },
+  "expected_manifest_counts_after_conflict_exclusion": {
+    "train_supported_food": 8241,
+    "train_non_food": 2465,
+    "validation_supported_food": 1116,
+    "validation_non_food": 528,
+    "validation_unsupported_food_evaluation_only": 6812,
+    "test_supported_food_frozen": 2719,
+    "test_non_food": 529,
+    "test_unsupported_food_evaluation_only": 22750
+  }
+}

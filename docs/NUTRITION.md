@@ -4,9 +4,17 @@
 
 The canonical catalog is `nutrition/data/foods.json`; the Flutter app bundles a
 verified mirror at `mobile/assets/nutrition/foods.json`. Lookup uses exact class ID,
-not catalog order or fuzzy matching. The 13 IDs match the production classifier:
+not catalog order or fuzzy matching. Nutrition exists for these 13 food IDs:
 `pizza`, `hamburger`, `sushi`, `steak`, `ice_cream`, `donuts`, `omelette`,
 `french_fries`, `chicken_wings`, `spaghetti_bolognese`, `borek`, `kebap`, `sarma`.
+
+The current 14-output classifier adds `non_food` after these 13 labels. It is a
+rejection label, not a nutrition catalog ID. A `non_food` prediction is rejected
+before nutrition lookup or diary saving. Supported classifier predictions require
+explicit user confirmation before lookup; manually selected foods also require
+confirmation. Confidence is informational and does not change nutrient values.
+Users can decline when a food is not among the supported categories. The classifier
+is not a reliable detector of unsupported foods.
 
 Nutrients are recorded per 100 g: energy in kcal and protein, carbohydrates, and
 fat in grams. Each entry includes source and mapping metadata, retrieval details,
@@ -56,6 +64,13 @@ Classifier confidence does not scale nutrients. The image does not determine por
 weight; the user can edit grams in the app. Meal records store calculated values as
 snapshots, so later catalog updates do not alter historical meals.
 
+The Weekly dashboard displays daily calories and the logged protein, carbohydrates,
+and fat totals. It also shows an **estimated macro-energy distribution** calculated
+from persisted macro snapshots using 4 kcal/g for protein, 4 kcal/g for
+carbohydrates, and 9 kcal/g for fat, normalized to the sum of these three
+contributions. These percentages describe only macro-derived energy; they are not
+percentages of total logged calories. No micronutrient visualization is implemented.
+
 ## Validation and use
 
 The catalog loader validates schema, provenance, exact IDs, required nutrients, and
@@ -79,5 +94,5 @@ calculation with provenance.
 Food categories include many recipes, toppings, cuts, fillings, and preparation
 methods. A mapped reference is an estimate, not a measurement of the photographed
 meal, and a single class cannot describe a mixed plate. Food classification does not
-measure mass. See [`ML_PIPELINE.md`](ML_PIPELINE.md) for the classifier's closed-set
-limitations and confidence policy.
+measure mass. See [`ML_PIPELINE.md`](ML_PIPELINE.md) for the current label policy
+and unsupported-food limitation.

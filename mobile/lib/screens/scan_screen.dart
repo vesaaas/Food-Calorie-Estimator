@@ -11,15 +11,19 @@ import '../services/diary_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/screen_header.dart';
 
+const _unsupportedFood = '__food_not_listed__';
+
 class ScanScreen extends StatefulWidget {
   const ScanScreen({
     super.key,
+    this.isActive = true,
     this.imageAcquisitionService,
     this.foodClassificationService,
     this.foodNutritionService,
     this.diaryController,
   });
 
+  final bool isActive;
   final ImageAcquisitionService? imageAcquisitionService;
   final FoodClassificationService? foodClassificationService;
   final FoodNutritionService? foodNutritionService;
@@ -41,7 +45,10 @@ class _ScanScreenState extends State<ScanScreen> {
   bool _isUpdatingPortion = false;
   bool _isSavingMeal = false;
   bool _portionInputInvalid = false;
-  bool _isLowConfidenceRejected = false;
+  bool _isNonFoodRejected = false;
+  bool _isAwaitingFoodConfirmation = false;
+  bool _isPredictionDeclined = false;
+  bool _isUnsupportedFood = false;
   FoodClassification? _classification;
   NutritionEstimate? _nutrition;
   String? _manualFoodId;
@@ -55,26 +62,35 @@ class _ScanScreenState extends State<ScanScreen> {
       _manualFoodId != null ||
       _isClassifying ||
       _isLoadingNutrition ||
-      _isLowConfidenceRejected ||
+      _isNonFoodRejected ||
+      _isAwaitingFoodConfirmation ||
+      _isPredictionDeclined ||
+      _isUnsupportedFood ||
       _portionInputInvalid;
 
-  void _resetScan() {
+  void _clearScanState() {
     _scanRequest++;
     _nutritionRequest++;
     FocusManager.instance.primaryFocus?.unfocus();
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    setState(() {
-      _selectedImage = null;
-      _classification = null;
-      _nutrition = null;
-      _manualFoodId = null;
-      _portionGramsController.clear();
-      _portionInputInvalid = false;
-      _isLowConfidenceRejected = false;
-      _isClassifying = false;
-      _isLoadingNutrition = false;
-      _isUpdatingPortion = false;
-    });
+    _selectedImage = null;
+    _classification = null;
+    _nutrition = null;
+    _manualFoodId = null;
+    _portionGramsController.clear();
+    _portionInputInvalid = false;
+    _isNonFoodRejected = false;
+    _isAwaitingFoodConfirmation = false;
+    _isPredictionDeclined = false;
+    _isUnsupportedFood = false;
+    _isClassifying = false;
+    _isLoadingNutrition = false;
+    _isUpdatingPortion = false;
+    _isPickingImage = false;
+  }
+
+  void _resetScan() {
+    setState(_clearScanState);
   }
 
   @override
@@ -89,19 +105,28 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   @override
+  void didUpdateWidget(covariant ScanScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive && !widget.isActive) _clearScanState();
+  }
+
+  @override
   void dispose() {
     _portionGramsController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage({required bool useCamera}) async {
-    if (_isPickingImage) return;
+    if (_isPickingImage || !widget.isActive) return;
+    final acquisitionRequest = _scanRequest;
     setState(() => _isPickingImage = true);
     try {
       final image = useCamera
           ? await _imageAcquisitionService.takePhoto()
           : await _imageAcquisitionService.chooseFromGallery();
-      if (!mounted) return;
+      if (!mounted || !widget.isActive || acquisitionRequest != _scanRequest) {
+        return;
+      }
       if (image != null) {
         final scanRequest = ++_scanRequest;
         _nutritionRequest++;
@@ -112,7 +137,10 @@ class _ScanScreenState extends State<ScanScreen> {
           _manualFoodId = null;
           _portionGramsController.clear();
           _portionInputInvalid = false;
-          _isLowConfidenceRejected = false;
+          _isNonFoodRejected = false;
+          _isAwaitingFoodConfirmation = false;
+          _isPredictionDeclined = false;
+          _isUnsupportedFood = false;
           _isLoadingNutrition = false;
           _isUpdatingPortion = false;
           _isClassifying = true;
@@ -122,40 +150,18 @@ class _ScanScreenState extends State<ScanScreen> {
             image.path,
           );
           if (!mounted || scanRequest != _scanRequest) return;
-          if (!result.meetsConfidenceThreshold) {
+          if (result.isNonFood) {
             setState(() {
-              _isLowConfidenceRejected = true;
+              _isNonFoodRejected = true;
               _isClassifying = false;
             });
             return;
           }
-          final request = ++_nutritionRequest;
           setState(() {
             _classification = result;
             _isClassifying = false;
-            _isLoadingNutrition = true;
+            _isAwaitingFoodConfirmation = true;
           });
-          try {
-            final estimate = await _foodNutritionService.estimate(result.food);
-            if (!mounted || request != _nutritionRequest) return;
-            setState(() {
-              _nutrition = estimate;
-              _portionGramsController.text = _formatGrams(
-                estimate.portionGrams,
-              );
-              _isLoadingNutrition = false;
-            });
-          } on Object {
-            if (!mounted || request != _nutritionRequest) return;
-            setState(() => _isLoadingNutrition = false);
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                const SnackBar(
-                  content: Text('Nutrition information could not be loaded.'),
-                ),
-              );
-          }
         } on Object {
           if (!mounted || scanRequest != _scanRequest) return;
           ScaffoldMessenger.of(context)
@@ -174,7 +180,9 @@ class _ScanScreenState extends State<ScanScreen> {
         }
       }
     } on Exception {
-      if (!mounted) return;
+      if (!mounted || !widget.isActive || acquisitionRequest != _scanRequest) {
+        return;
+      }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
@@ -188,6 +196,90 @@ class _ScanScreenState extends State<ScanScreen> {
         );
     } finally {
       if (mounted) setState(() => _isPickingImage = false);
+    }
+  }
+
+  void _declineFoodSelection() {
+    if (!_isAwaitingFoodConfirmation) return;
+    _nutritionRequest++;
+    setState(() {
+      _classification = null;
+      _manualFoodId = null;
+      _nutrition = null;
+      _portionGramsController.clear();
+      _portionInputInvalid = false;
+      _isNonFoodRejected = false;
+      _isAwaitingFoodConfirmation = false;
+      _isPredictionDeclined = true;
+      _isUnsupportedFood = false;
+      _isLoadingNutrition = false;
+      _isUpdatingPortion = false;
+    });
+  }
+
+  void _declineUnsupportedFood() {
+    _scanRequest++;
+    _nutritionRequest++;
+    setState(() {
+      _classification = null;
+      _manualFoodId = null;
+      _nutrition = null;
+      _portionGramsController.clear();
+      _portionInputInvalid = false;
+      _isNonFoodRejected = false;
+      _isAwaitingFoodConfirmation = false;
+      _isPredictionDeclined = false;
+      _isUnsupportedFood = true;
+      _isLoadingNutrition = false;
+      _isUpdatingPortion = false;
+    });
+  }
+
+  Future<void> _confirmFoodSelection() async {
+    if (!_isAwaitingFoodConfirmation || !widget.isActive) return;
+    final foodId = _manualFoodId ?? _classification?.food;
+    if (foodId == null || !foodClassNames.contains(foodId)) {
+      _declineUnsupportedFood();
+      return;
+    }
+    final scanRequest = _scanRequest;
+    final nutritionRequest = ++_nutritionRequest;
+    setState(() {
+      _isAwaitingFoodConfirmation = false;
+      _isLoadingNutrition = true;
+      _portionInputInvalid = false;
+    });
+    try {
+      final estimate = await _foodNutritionService.estimate(foodId);
+      if (!mounted ||
+          !widget.isActive ||
+          scanRequest != _scanRequest ||
+          nutritionRequest != _nutritionRequest) {
+        return;
+      }
+      setState(() {
+        _nutrition = estimate;
+        _portionGramsController.text = _formatGrams(estimate.portionGrams);
+        _isLoadingNutrition = false;
+      });
+    } on Object {
+      if (!mounted ||
+          !widget.isActive ||
+          scanRequest != _scanRequest ||
+          nutritionRequest != _nutritionRequest) {
+        return;
+      }
+      setState(() {
+        _isLoadingNutrition = false;
+        _isAwaitingFoodConfirmation = true;
+      });
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Nutrition information could not be loaded.'),
+          ),
+        );
     }
   }
 
@@ -232,7 +324,9 @@ class _ScanScreenState extends State<ScanScreen> {
       !_isUpdatingPortion &&
       !_portionInputInvalid &&
       (_manualFoodId != null ||
-          (_classification?.meetsConfidenceThreshold ?? false)) &&
+          (_classification != null &&
+              !_classification!.isNonFood &&
+              _classification!.food != null)) &&
       _nutrition != null &&
       widget.diaryController != null;
 
@@ -257,7 +351,7 @@ class _ScanScreenState extends State<ScanScreen> {
         _manualFoodId = null;
         _portionGramsController.clear();
         _portionInputInvalid = false;
-        _isLowConfidenceRejected = false;
+        _isNonFoodRejected = false;
         _isLoadingNutrition = false;
         _isUpdatingPortion = false;
       });
@@ -283,7 +377,8 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Future<void> _addManually() async {
-    if (_isSavingMeal || _isPickingImage) return;
+    if (_isSavingMeal || _isPickingImage || !widget.isActive) return;
+    final selectionRequest = _scanRequest;
     final foodId = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -303,6 +398,13 @@ class _ScanScreenState extends State<ScanScreen> {
               Expanded(
                 child: ListView(
                   children: [
+                    ListTile(
+                      key: const Key('manual-food-not-listed'),
+                      leading: const Icon(Icons.help_outline),
+                      title: const Text("My food isn't listed"),
+                      onTap: () => Navigator.of(context).pop(_unsupportedFood),
+                    ),
+                    const Divider(),
                     for (final food in foodClassNames)
                       ListTile(
                         key: Key('manual-food-$food'),
@@ -317,10 +419,19 @@ class _ScanScreenState extends State<ScanScreen> {
         ),
       ),
     );
-    if (!mounted || foodId == null) return;
+    if (!mounted ||
+        !widget.isActive ||
+        selectionRequest != _scanRequest ||
+        foodId == null) {
+      return;
+    }
+    if (foodId == _unsupportedFood) {
+      _declineUnsupportedFood();
+      return;
+    }
 
-    final scanRequest = ++_scanRequest;
-    final nutritionRequest = ++_nutritionRequest;
+    _scanRequest++;
+    _nutritionRequest++;
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _selectedImage = null;
@@ -329,43 +440,20 @@ class _ScanScreenState extends State<ScanScreen> {
       _manualFoodId = foodId;
       _portionGramsController.clear();
       _portionInputInvalid = false;
-      _isLowConfidenceRejected = false;
+      _isNonFoodRejected = false;
+      _isAwaitingFoodConfirmation = true;
+      _isPredictionDeclined = false;
+      _isUnsupportedFood = false;
       _isClassifying = false;
-      _isLoadingNutrition = true;
+      _isLoadingNutrition = false;
       _isUpdatingPortion = false;
     });
-    try {
-      final estimate = await _foodNutritionService.estimate(foodId);
-      if (!mounted ||
-          scanRequest != _scanRequest ||
-          nutritionRequest != _nutritionRequest) {
-        return;
-      }
-      setState(() {
-        _nutrition = estimate;
-        _portionGramsController.text = _formatGrams(estimate.portionGrams);
-        _isLoadingNutrition = false;
-      });
-    } on Object {
-      if (!mounted ||
-          scanRequest != _scanRequest ||
-          nutritionRequest != _nutritionRequest) {
-        return;
-      }
-      setState(() => _isLoadingNutrition = false);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text('Nutrition information could not be loaded.'),
-          ),
-        );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return ListView(
+      key: const Key('scan-screen-scroll'),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(22, 24, 22, 28),
       children: [
@@ -470,32 +558,80 @@ class _ScanScreenState extends State<ScanScreen> {
                   const SizedBox(height: 8),
                   const Text('Analyzing photo…'),
                 ],
-                if (_isLowConfidenceRejected) ...[
+                if (_isNonFoodRejected) ...[
                   const SizedBox(height: 14),
                   const Text(
-                    'Unable to confidently identify this food. Please try another photo.',
-                    key: Key('low-confidence-rejection'),
+                    'This photo was identified as a non-food object. Please photograph a meal and try again.',
+                    key: Key('non-food-rejection'),
                     textAlign: TextAlign.center,
                   ),
                 ],
-                if (_classification case final result?) ...[
+                if (_classification case final result?
+                    when !result.isNonFood) ...[
                   const SizedBox(height: 14),
                   Text(
-                    'Predicted food: ${result.food.replaceAll('_', ' ')}',
+                    'Predicted food: ${result.food!.replaceAll('_', ' ')}',
                     key: const Key('food-prediction'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
-                    'Confidence: ${(result.confidence * 100).toStringAsFixed(1)}%',
+                    'Model confidence (informational): ${(result.confidence * 100).toStringAsFixed(1)}%',
                   ),
                 ],
                 if (_manualFoodId case final foodId?) ...[
                   const SizedBox(height: 14),
                   Text(
-                    'Selected food: ${_displayFoodName(foodId)}',
+                    'User-selected food: ${_displayFoodName(foodId)}',
                     key: const Key('manual-food-selection'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
+                ],
+                if (_isAwaitingFoodConfirmation) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    'Is this the correct food?',
+                    key: const Key('food-confirmation-question'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton(
+                        key: const Key('confirm-food-button'),
+                        onPressed: _confirmFoodSelection,
+                        child: const Text('Yes, correct'),
+                      ),
+                      OutlinedButton(
+                        key: const Key('decline-food-button'),
+                        onPressed: _declineFoodSelection,
+                        child: const Text('No, incorrect'),
+                      ),
+                    ],
+                  ),
+                ],
+                if (_isPredictionDeclined) ...[
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Choose another photo or select a listed food manually. If your food is not listed, it is not currently supported.',
+                    key: Key('prediction-declined-message'),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  _retryAndManualActions(),
+                ],
+                if (_isUnsupportedFood) ...[
+                  const SizedBox(height: 14),
+                  const Text(
+                    'This food is not currently supported, so no nutrition estimate was created. Please try another meal photo.',
+                    key: Key('unsupported-food-message'),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  _retryPhotoActions(),
                 ],
                 if (_isLoadingNutrition) ...[
                   const SizedBox(height: 12),
@@ -614,6 +750,64 @@ class _ScanScreenState extends State<ScanScreen> {
         ),
       ],
     ),
+  );
+
+  Widget _retryAndManualActions() => Wrap(
+    alignment: WrapAlignment.center,
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      OutlinedButton.icon(
+        key: const Key('retry-camera-button'),
+        onPressed: _isPickingImage || _isSavingMeal
+            ? null
+            : () => _pickImage(useCamera: true),
+        icon: const Icon(Icons.photo_camera_outlined),
+        label: const Text('Try Camera'),
+      ),
+      OutlinedButton.icon(
+        key: const Key('retry-gallery-button'),
+        onPressed: _isPickingImage || _isSavingMeal
+            ? null
+            : () => _pickImage(useCamera: false),
+        icon: const Icon(Icons.photo_library_outlined),
+        label: const Text('Try Gallery'),
+      ),
+      FilledButton.tonal(
+        key: const Key('declined-manual-selection-button'),
+        onPressed: _isPickingImage || _isSavingMeal ? null : _addManually,
+        child: const Text('Choose manually'),
+      ),
+      TextButton(
+        key: const Key('decline-unsupported-food-button'),
+        onPressed: _declineUnsupportedFood,
+        child: const Text("My food isn't listed"),
+      ),
+    ],
+  );
+
+  Widget _retryPhotoActions() => Wrap(
+    alignment: WrapAlignment.center,
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      OutlinedButton.icon(
+        key: const Key('unsupported-retry-camera-button'),
+        onPressed: _isPickingImage || _isSavingMeal
+            ? null
+            : () => _pickImage(useCamera: true),
+        icon: const Icon(Icons.photo_camera_outlined),
+        label: const Text('Try Camera'),
+      ),
+      OutlinedButton.icon(
+        key: const Key('unsupported-retry-gallery-button'),
+        onPressed: _isPickingImage || _isSavingMeal
+            ? null
+            : () => _pickImage(useCamera: false),
+        icon: const Icon(Icons.photo_library_outlined),
+        label: const Text('Try Gallery'),
+      ),
+    ],
   );
 }
 

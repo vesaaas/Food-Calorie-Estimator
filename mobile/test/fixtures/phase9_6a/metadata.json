@@ -1,0 +1,125 @@
+{
+  "pipeline": "Pillow ImageOps.exif_transpose, convert RGB, shortest edge 256 via int truncation, Image.Resampling.BILINEAR, Python round center crop 224; golden values are raw uint8 RGB bytes",
+  "cases": {
+    "landscape": {
+      "source": "landscape.png",
+      "source_dimensions": [
+        306,
+        224
+      ],
+      "exif_orientation": 1,
+      "oriented_dimensions": [
+        306,
+        224
+      ],
+      "resized_dimensions": [
+        349,
+        256
+      ],
+      "crop_offset": [
+        62,
+        16
+      ],
+      "golden_sha256": "a6c31d1612b267fe403fd10a80b001cf79fa4277c6f30b7c15f60522cd4a82f8",
+      "golden_rgb_bytes": 150528,
+      "pixel_min": 0,
+      "pixel_max": 255
+    },
+    "portrait": {
+      "source": "portrait.png",
+      "source_dimensions": [
+        224,
+        306
+      ],
+      "exif_orientation": 1,
+      "oriented_dimensions": [
+        224,
+        306
+      ],
+      "resized_dimensions": [
+        256,
+        349
+      ],
+      "crop_offset": [
+        16,
+        62
+      ],
+      "golden_sha256": "22efe6e551bb05ac564563ecc345e8568235685340c879fa9825788e367616d7",
+      "golden_rgb_bytes": 150528,
+      "pixel_min": 0,
+      "pixel_max": 255
+    },
+    "square": {
+      "source": "square.png",
+      "source_dimensions": [
+        257,
+        257
+      ],
+      "exif_orientation": 1,
+      "oriented_dimensions": [
+        257,
+        257
+      ],
+      "resized_dimensions": [
+        256,
+        256
+      ],
+      "crop_offset": [
+        16,
+        16
+      ],
+      "golden_sha256": "c726f1dcfb9c9a85b883dafcb155d9f808d02893f72e68195e0595d7de7d4707",
+      "golden_rgb_bytes": 150528,
+      "pixel_min": 0,
+      "pixel_max": 254
+    },
+    "odd_dimensions": {
+      "source": "odd_dimensions.png",
+      "source_dimensions": [
+        299,
+        223
+      ],
+      "exif_orientation": 1,
+      "oriented_dimensions": [
+        299,
+        223
+      ],
+      "resized_dimensions": [
+        343,
+        256
+      ],
+      "crop_offset": [
+        60,
+        16
+      ],
+      "golden_sha256": "6248283a72582158c2e011229a48630aec1d4e67ca3fb9bee24d6b5190760946",
+      "golden_rgb_bytes": 150528,
+      "pixel_min": 0,
+      "pixel_max": 255
+    },
+    "exif_rotated": {
+      "source": "exif_rotated.jpg",
+      "source_dimensions": [
+        303,
+        217
+      ],
+      "exif_orientation": 6,
+      "oriented_dimensions": [
+        217,
+        303
+      ],
+      "resized_dimensions": [
+        256,
+        357
+      ],
+      "crop_offset": [
+        16,
+        66
+      ],
+      "golden_sha256": "a58a01fea3f30b48ebc538f7c079b418834373dd762cdd7f2e6d7f3dd65e6b0d",
+      "golden_rgb_bytes": 150528,
+      "pixel_min": 0,
+      "pixel_max": 255
+    }
+  }
+}

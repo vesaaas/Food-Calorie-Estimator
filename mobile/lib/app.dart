@@ -67,7 +67,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   int _selectedIndex = 0;
   late final DiaryController _diaryController;
   late final bool _ownsDiaryController;
-  late final List<Widget> _screens;
 
   @override
   void initState() {
@@ -81,17 +80,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           photoStore: AppSupportMealPhotoStore(),
         );
     unawaited(_diaryController.initialize());
-    _screens = [
-      ScanScreen(
-        imageAcquisitionService: widget.imageAcquisitionService,
-        foodClassificationService: widget.foodClassificationService,
-        foodNutritionService: widget.foodNutritionService,
-        diaryController: _diaryController,
-      ),
-      DiaryScreen(diaryController: _diaryController),
-      DashboardScreen(diaryController: _diaryController),
-      GoalScreen(diaryController: _diaryController),
-    ];
   }
 
   @override
@@ -112,7 +100,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: IndexedStack(index: _selectedIndex, children: _screens),
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            ScanScreen(
+              isActive: _selectedIndex == 0,
+              imageAcquisitionService: widget.imageAcquisitionService,
+              foodClassificationService: widget.foodClassificationService,
+              foodNutritionService: widget.foodNutritionService,
+              diaryController: _diaryController,
+            ),
+            DiaryScreen(diaryController: _diaryController),
+            DashboardScreen(diaryController: _diaryController),
+            GoalScreen(diaryController: _diaryController),
+          ],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,

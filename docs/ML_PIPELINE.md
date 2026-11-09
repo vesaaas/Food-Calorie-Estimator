@@ -1,99 +1,127 @@
 # ML Pipeline
 
-## Production model
+## Current mobile model
 
-The mobile production classifier is **MobileNetV3 Small**, implemented with
-TensorFlow/Keras and exported to TensorFlow Lite for on-device inference. It maps
-images to 13 supported food classes. The TFLite model achieved **88.12% top-1
-accuracy on the held-out set of 2,719 images**. This is food-classification
-accuracy, not nutrition or calorie-estimation accuracy.
-
-The tracked model contract is `ml/mobile/mobilenet_v3_tflite_contract_v2.json`; the
-ordered labels are in `ml/mobile/mobilenet_v3_labels.txt`. Input is RGB float32 NHWC
-`[1,224,224,3]` in `[0,255]`, resized with shortest edge 256 and center-cropped to
-224×224. MobileNetV3's built-in preprocessing rescales inputs to `[-1,1]`; callers
-must not apply ImageNet mean/std normalization again. Output is `[1,13]` softmax
-scores. The exported dynamically weight-optimized flatbuffer is about 1.1 MB.
-
-### Classes
+The current Flutter app uses a float32 TensorFlow Lite MobileNetV3 Small classifier
+with 14 outputs. Indices 0–12 are the 13 supported food classes; index 13 is
+`non_food`. The exact ordered labels are:
 
 ```text
 pizza, hamburger, sushi, steak, ice_cream, donuts, omelette,
-french_fries, chicken_wings, spaghetti_bolognese, borek, kebap, sarma
+french_fries, chicken_wings, spaghetti_bolognese, borek, kebap, sarma, non_food
 ```
 
-### Evaluation method
+The Flutter asset is
+`mobile/assets/models/mobilenet_v3_small_phase9_5_14class.tflite`; labels are in
+`mobile/assets/models/labels_phase9_5_14class.txt`. The previous 13-class model,
+`mobile/assets/models/mobilenet_v3_small_phase7_v2.tflite`, is retained for rollback.
+The 14-class model is the current app model; the planned Flutter release version is
+`1.1.0+2`. The local Android v1.1.0 candidate APK has been built and verified;
+physical-device checks and publication remain pending. See
+[`ANDROID_RELEASE.md`](ANDROID_RELEASE.md).
 
-The mixed dataset contains 7,684 training images, 1,700 validation images, and
-2,719 held-out test images. Food-101 validation examples are selected only from the
-official training split; its official test membership is preserved. Three selected
-TurkishFoods-25 classes use the source train/eval/test splits, with
-`yaprak_sarma` mapped to `sarma`. Data preparation checks duplicate image content
-across splits. Details of dataset provenance and split handling are in
-[`DATASET.md`](DATASET.md).
+## Preprocessing and output contract
 
-The Keras checkpoint was selected using validation accuracy before the held-out test
-was evaluated. On the independent test set, Keras scored 89.41%; the exported TFLite
-model scored 88.12%. For 39 representative images (three per class), top-1 outputs
-matched on 38; mean absolute probability difference was 0.01010. The test split
-contains 2,500 Food-101 images and 219 regional-food images. Per-class TFLite
-accuracy was 93.20% pizza, 74.00% hamburger, 81.20% sushi, 72.40% steak, 83.60%
-ice cream, 92.80% donuts, 88.40% omelette, 97.20% french fries, 94.80% chicken
-wings, 96.40% spaghetti Bolognese, 97.44% börek, 98.78% kebap, and 91.53% sarma.
+Images are oriented using EXIF metadata, decoded to RGB, resized so the shortest
+edge is 256 pixels with bilinear interpolation, then center-cropped to 224×224.
+The model input is float32 NHWC `[1,224,224,3]` in the `[0,255]` pixel range. The
+TFLite graph retains MobileNetV3's internal rescaling to `[-1,1]`; callers must not
+apply additional normalization. Output is 14 float32 softmax probabilities in the
+label order above.
 
-## Confidence policy and limitations
+The frozen decision policy is argmax over all outputs. There is no additional
+confidence threshold: the former 0.55 acceptance gate is not used by the current
+14-class model. Confidence is informational only. If argmax is `non_food`, the app
+rejects the image before nutrition lookup or diary saving. For a supported class,
+the app requires user confirmation before lookup; a user may retry or manually
+select and confirm a supported food. A user can also decline with “My food isn't
+listed.” This flow does not convert unsupported foods into `non_food` and is not a
+reliable unsupported-food detector.
 
-The app uses **0.55** as a low-confidence handling threshold. This value was selected
-on validation data. At that operating point validation coverage was 85.47%, with
-89.54% accuracy among accepted predictions. With the threshold frozen, the held-out
-test accepted 2,410 of 2,719 predictions (88.64% coverage); accepted accuracy was
-92.95%. This policy is a retry prompt for low-confidence results only.
+## Phase 9.3–9.5 experiment and held-out evaluation
 
-The classifier is closed-set and always assigns one of its 13 classes. Unsupported
-foods and non-food images can map to supported classes, including at high confidence.
-The 0.55 threshold is **not** an open-set, unsupported-food, or food/non-food
-detector. Confidence is not calibrated and does not adjust nutrition. Portion weight
-is user-entered and is not estimated from pixels.
+The 14-class candidate was prepared from the existing 13 supported-food classes and
+a broad `non_food` class. Unsupported foods were retained as a separate evaluation
+category, not relabeled as `non_food`. The selected 14-class Keras checkpoint was
+evaluated on held-out cohorts of 2,719 supported-food images, 529 non-food images,
+and 22,750 unsupported-food images. The decision policy was frozen as argmax before
+this one-time held-out evaluation; held-out results were not used for threshold
+selection or model tuning.
 
-## Training and reproducibility
+Held-out results for the selected candidate:
 
-The Keras MobileNetV3 Small model uses ImageNet initialization, a new 13-output
-softmax head, and fine-tunes the backbone on the existing mixed training data. The
-best checkpoint is selected with validation accuracy. The recorded run used
-TensorFlow 2.20/Keras on CPU, seed 42, batch size 32, weighted sparse
-categorical cross-entropy, and Adam. It used an initial five-epoch stage at a
-learning rate of `1e-4`, then a five-epoch lower-rate continuation at `1e-5`; the
-continuation's final epoch was selected at 84.12% validation accuracy. The held-out
-test set was not used for checkpoint selection. TensorFlow/Keras training and TFLite
-export scripts are under `ml/src/`; generated datasets, checkpoints, and reports
-are ignored by Git. The model contract and labels remain tracked so the mobile
-inference path is explicit and inspectable.
+| Metric | Result |
+| --- | ---: |
+| Supported-food classification accuracy | **90.33%** |
+| Supported-food acceptance | **99.63%** |
+| Non-food rejection | **94.33%** |
+| Unsupported-food rejection | **2.03%** |
 
-Useful commands, after preparing datasets and installing `requirements.txt`:
+Supported-food acceptance is the share of supported examples assigned any of the
+13 supported labels. It is not the same as top-1 classification accuracy: accepted
+images may still have the wrong food label. Non-food rejection is the share of
+non-food objects assigned to `non_food`. Unsupported-food rejection is measured
+separately and remains very low; the model is **not a reliable unsupported-food
+detector**. Unsupported foods can receive high-confidence predictions in one of the
+supported classes.
 
-```bash
-python -m ml.src.train_mobilenet_v3
-python -m ml.src.evaluate_mobilenet_v3
-python -m ml.src.export_mobilenet_v3_tflite
-python -m ml.src.verify_mobilenet_v3
-```
+Project engineering targets (not reviewer-specified requirements) included at least
+97% supported-food acceptance, 95% acceptance per supported class, 80% non-food
+rejection, 50% unsupported-food rejection, and no more than a 2 percentage-point
+classification-accuracy drop from the 13-class Keras baseline. The full target set
+was already unmet during validation: minimum per-class acceptance was 94.67% and
+unsupported-food rejection was low. Held-out evaluation was performed on the frozen
+candidate and policy, without retuning.
 
-## Historical EfficientNet experiments
+### Keras/TFLite parity and baseline distinction
 
-Earlier PyTorch EfficientNet-B0 models supported development and evaluation. The
-original ten-class Food-101 experiment scored 94.48% on its 2,500-image test split.
-A separate 13-class mixed-data experiment scored 95.66% on 2,719 images. These
-results describe distinct historical experiments and are **not** the deployed
-mobile model's accuracy. They are not directly comparable as a basis for the
-production claim. Relevant training, evaluation, and inference code remains in
-`ml/src/` for reproducibility.
+The Phase 9.5 float32 export was made from the selected 14-class Keras checkpoint.
+Deterministic validation samples covered supported food, non-food, and unsupported
+food; conversion parity checks passed. The frozen held-out evaluation reported the
+same aggregate metrics for the exported TFLite candidate and its Keras checkpoint.
+This parity result applies to the 14-class Keras/TFLite pair.
 
-## Robustness research
+For comparison, the existing 13-class Keras baseline scored **89.41%** on the same
+2,719 held-out supported-food examples. The previously deployed 13-class TFLite
+baseline scored **88.12%** on those supported-food images. Keras and TFLite results
+are separate runtimes and are not treated as interchangeable. The 14-class TFLite
+supported-food accuracy is **90.33%**.
 
-Alternative approaches were evaluated but did not meet the criteria for integration.
-A MobileNet fine-tuning candidate reached 88.23% test accuracy and improved expected
-calibration error, but reduced accuracy in 7 of 13 classes. A three-way supported /
-unsupported / non-food triage approach rejected too many valid supported foods. A
-binary food/non-food candidate did not meet its supported-food and non-food rejection
-criteria. None is part of the app; production remains the validated MobileNetV3
-TFLite baseline. The classifier's closed-set limitation therefore remains explicit.
+Preprocessing parity fixtures compare Python/Pillow and Flutter inputs on five
+deterministic images. They record exact matches on three, a maximum pixel difference
+of 1 on the square case, and a maximum of 3 on the EXIF-rotated JPEG. The five
+fixture argmax outputs matched, with maximum probability-vector difference 0.002416;
+all five fixture images predicted `non_food`. This checks the preprocessing/runtime
+path, not class-wide accuracy. See
+[`../mobile/test/fixtures/phase9_6a/README.md`](../mobile/test/fixtures/phase9_6a/README.md).
+
+## Training and experiment artifacts
+
+Phase 9.3 used transfer learning initialized from the selected 13-class Keras
+checkpoint, first training a replacement 14-output head with a frozen backbone and
+then optionally fine-tuning a bounded final backbone section. Phase 9.4 evaluated
+the frozen selected checkpoint once on held-out cohorts. Phase 9.5 exported the
+candidate separately; the production 13-class asset was preserved. Experiment
+scripts/configuration are under `ml/experiments/`. Generated datasets, checkpoints,
+reports, and isolated model outputs are under Git-ignored data/artifact locations.
+No Phase 9 experiment replaces the old rollback model.
+
+## Historical 13-class baseline
+
+The former 13-class MobileNetV3 model achieved **88.12% TFLite top-1 accuracy** on
+2,719 supported-food test images; its Keras checkpoint scored **89.41%** on the same
+cohort. Those are baseline results, not metrics for the 14-class model. Historical
+13-class training, data split methodology, and per-class results are preserved in
+the experiment artifacts and repository history. The previous 0.55 confidence
+policy was evaluated for that closed-set model; it is not part of the current
+14-class argmax decision policy.
+
+## Limitations
+
+The 14-class classifier's `non_food` label rejects many non-food objects but does
+not identify unsupported foods reliably. Its 2.03% held-out unsupported-food
+rejection means most such examples were assigned a supported food label. User
+confirmation is a practical safeguard, not an unsupported-food detector. Classifier
+confidence does not adjust nutrition. Portion weight is user-entered, not estimated
+from pixels. Nutrition is based on representative catalog mappings, not an exact
+measurement of recipe composition.
