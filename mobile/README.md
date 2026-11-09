@@ -71,8 +71,9 @@ The latest check completed cleanly with **90 passing Flutter tests**. Phase 9.6â
 physical Android checks were reported successful by the user; this is not an
 automated test or an independent reproduction. The v1.1.0+2 APK has since been
 built locally and its SHA-256, package/version metadata, and APK v2 signature were
-verified. The final v1.1.0 APK physical-device check remains pending. The APK is a
-local ignored build output, not a published release; see
+verified. The APK is a local ignored build output, not a published release. The
+user confirmed it passed functional testing on a Samsung Android phone; this was
+not independently reproduced during this repository check. See
 [`../docs/RELEASE_NOTES_v1.1.0.md`](../docs/RELEASE_NOTES_v1.1.0.md).
 
 An iOS Release app product was built locally with version 1.1.0 (build 2), but

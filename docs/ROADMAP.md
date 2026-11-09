@@ -1,8 +1,9 @@
 # Engineering Roadmap
 
 The project has completed its core data, mobile, persistence, and reviewer-requested
-Phase 9 implementation work. The local v1.1.0 Android APK is verified; final
-physical-device checks and publication remain pending.
+Phase 9 implementation work. The local v1.1.0 Android APK is verified and its
+functional test on a Samsung Android phone was confirmed by the user. Android
+publication remains pending.
 
 | Phase | Scope | Status |
 | --- | --- | --- |
@@ -47,8 +48,8 @@ check. Flutter analysis is clean and the full suite has 90 passing tests.
   103,563,167 bytes; its SHA-256, package/version/SDK metadata and v2 signature have
   been verified. The signer certificate fingerprint is in
   [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md). This APK is not yet published.
-- Final v1.1.0 APK physical-device testing remains pending. Earlier Phase 9 checks
-  were user-reported and do not substitute for testing this release artifact.
+- The user confirmed final v1.1.0 APK functional testing passed on a Samsung Android
+  phone. This user report is not an independently reproduced device test.
 - A local iOS Release product exists, but strict signature verification returned
   `CSSMERR_TP_NOT_TRUSTED`; distribution signing and iOS Release-device testing are
   pending.

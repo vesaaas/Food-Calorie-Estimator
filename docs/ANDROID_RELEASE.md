@@ -32,9 +32,10 @@ on 2026-11-09 found:
 
 The fingerprint matches the expected release fingerprint supplied for this build.
 Verification inspected the APK signature; it did not read or disclose signing
-credentials or private keystore contents. The build and signature checks do not
-replace final physical-device testing. The final v1.1.0 APK device check remains
-pending. The v1.0.0 public APK URL and checksum remain recorded in the root README.
+credentials or private keystore contents. The user confirmed the final v1.1.0 APK
+passed functional testing on a Samsung Android phone. This is user-reported
+verification and was not independently reproduced as part of the repository checks.
+The v1.0.0 public APK URL and checksum remain recorded in the root README.
 
 The v1.1.0 release build must use the dedicated signing configuration. Gradle does
 not fall back to debug signing. `key.properties` and keystore files are excluded by
@@ -91,6 +92,6 @@ release APK is signed by the dedicated certificate. Do not publish or install a
 release artifact until the keystore is available, the signing configuration passes,
 and the local-data migration impact has been communicated.
 
-The current local Android candidate has passed package/version/SDK and APK signature
-verification, but physical-device validation and separate release publication are
-still pending.
+The local Android candidate has passed package/version/SDK and APK signature checks,
+and final functional testing on a Samsung Android phone was confirmed by the user.
+Separate release publication remains pending until the GitHub Release is created.

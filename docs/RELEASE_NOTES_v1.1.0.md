@@ -1,7 +1,6 @@
-# Food Calorie Estimator v1.1.0
+# Food Calorie Estimator v1.1.0 — Android
 
-Version: **1.1.0+2**. These notes describe the locally verified Android candidate;
-they do not announce a published release.
+Version: **1.1.0+2**. This is an Android-only release. No iOS artifact is included.
 
 ## What's new
 
@@ -30,19 +29,18 @@ Android cannot directly update a v1.0.0 installation with this signer. Uninstall
 the old app may delete its local diary and saved meal photos, so back up local data
 before reinstalling.
 
-The local candidate APK is
-`mobile/build/app/outputs/flutter-apk/app-release.apk` (103,563,167 bytes), package
-`com.example.food_calorie_estimator`, version name/code `1.1.0` / `2`, min SDK 24,
-target SDK 36. Its SHA-256 is
+The Android APK is `FoodCalorieEstimator-v1.1.0-android.apk` (103,563,167 bytes),
+package `com.example.food_calorie_estimator`, version name/code `1.1.0` / `2`, min
+SDK 24, target SDK 36. Its SHA-256 is
 `b71e0eb55b2fa5e4bec0ce1ae7c3c237809f9540a97d603f84e5d07ca535c696`; its APK v2
 signature was verified. The signer certificate fingerprint and verification detail
-are in [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md). The APK is a local ignored build
-output and is not a published GitHub release. Final Android APK physical-device
-testing remains pending.
+are in [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md). The user confirmed that final
+functional testing passed on a Samsung Android phone; this is user-reported and was
+not independently reproduced here.
 
 ## iOS status
 
 A local iOS Release app product with version 1.1.0/build 2 was produced. Strict
 local signature verification reported `CSSMERR_TP_NOT_TRUSTED`; App Store
 distribution-signing readiness has not been established. Physical iOS Release-mode
-testing remains pending.
+testing remains pending. This release contains no iOS build or distribution claim.

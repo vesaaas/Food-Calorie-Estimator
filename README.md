@@ -114,10 +114,10 @@ total logged calories**. No micronutrient visualization is provided.
   and its float32 TFLite export and parity were checked in Phase 9.5.
 - Physical Android checks for the Phase 9.6–9.7 app changes were **reported by the
   user as successful**. This is not an automated test or an independently reproduced
-  result. Device/version details and broader device coverage should be recorded with
-  final release verification.
-- Earlier v1.0.0 physical-device validation is historical and does not replace
-  v1.1.0 release checks.
+  result. The user has also confirmed that the final v1.1.0 APK passed functional
+  testing on a Samsung Android phone. This release-device check is user-confirmed,
+  not independently reproduced here.
+- iOS Release-mode device testing and App Store distribution signing remain pending.
 
 ## Android APK
 
@@ -125,7 +125,8 @@ The latest **public** release remains **v1.0.0**. Its APK is available through
 [GitHub Releases](https://github.com/vesaaas/Food-Calorie-Estimator/releases/download/v1.0.0/app-release.apk).
 The v1.1.0 candidate (`1.1.0+2`) has been built locally and its APK signature,
 package metadata, and checksum have been verified. It has not been published.
-Final Android APK physical-device testing remains pending. See the
+The user confirmed final APK functional testing passed on a Samsung Android phone.
+See the
 [Android release signing guide](docs/ANDROID_RELEASE.md) and
 [v1.1.0 release notes](docs/RELEASE_NOTES_v1.1.0.md).
 

@@ -2,8 +2,9 @@
 
 The current Flutter application provides on-device food classification, nutrition
 estimation, local meal logging, and daily/weekly summaries. Core workflows operate
-offline. The v1.1.0 Android candidate APK has been built and locally verified; final
-physical-device checks and publication remain pending.
+offline. The v1.1.0 Android candidate APK has been built and locally verified. The
+user confirmed its functional testing passed on a Samsung Android phone. Release
+publication is the remaining Android step.
 
 ## Mobile model and decision policy
 
@@ -80,16 +81,18 @@ logged calories. Micronutrient charts are not present.
   possible; uninstalling may delete the local diary and meal photos. Preserve a
   backup before migration. Do not put the release keystore or local signing
   properties under version control.
-- The v1.1.0 Android APK has not completed final physical-device testing. The
-  previous Phase 9 device checks were user-reported and are not this release APK's
-  verification.
+- The user confirmed the final v1.1.0 APK passed functional testing on a Samsung
+  Android phone. This is user-reported evidence, not an independently reproduced
+  test in this repository audit.
 - A local iOS Release app product reports version 1.1.0/build 2, but strict
   `codesign` verification returned `CSSMERR_TP_NOT_TRUSTED`; this is not evidence
   of App Store distribution-signing readiness. iOS Release-device testing remains
   pending.
 - The current Flutter Gradle plugin resolves `flutter.minSdkVersion` to API 24,
   which supports the original APK's v2 signing scheme.
-- Final v1.1.0 physical-device checks and publication remain pending.
+- Final Android device testing is user-confirmed complete; publication remains
+  pending. iOS Release-device testing and App Store distribution signing remain
+  pending.
 
 See [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md) for signing setup, upgrade
 compatibility, and the local diary data implications.
