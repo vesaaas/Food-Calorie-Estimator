@@ -1,9 +1,10 @@
 # Engineering Roadmap
 
 The project has completed its core data, mobile, persistence, and reviewer-requested
-Phase 9 implementation work. The local v1.1.0 Android APK is verified and its
-functional test on a Samsung Android phone was confirmed by the user. Android
-publication remains pending.
+Phase 9 implementation work. Android v1.1.0 is published and passed functional
+testing on a physical Samsung Android device. A v1.1.1 maintenance candidate is
+being prepared; its isolated release build is verified and its physical-device
+verification remains pending.
 
 | Phase | Scope | Status |
 | --- | --- | --- |
@@ -16,7 +17,8 @@ publication remains pending.
 | Phase 7 | SQLite persistence and offline functionality | COMPLETE |
 | Phase 8 | Testing, validation, and project documentation | COMPLETE |
 | Phase 9 | Weekly macro dashboard, 14-class non-food handling, parity, and user confirmation | COMPLETE |
-| Phase 9.8 | Final documentation and release preparation | IN PROGRESS |
+| Phase 9.8 | v1.1.0 release and post-release documentation | COMPLETE |
+| Maintenance | v1.1.1 Android backup hardening and release preparation | IN PROGRESS |
 
 ## Phase 9 results and limitations
 
@@ -32,30 +34,34 @@ an estimated macro-energy distribution using 4/4/9 kcal per gram. The distributi
 is normalized over logged macro contributions, not total logged calories. No
 micronutrient charts are implemented.
 
-Phase 9 physical Android checks were reported successful by the user. This is
-user-reported verification rather than an automated or independently reproduced
-check. Flutter analysis is clean and the full suite has 90 passing tests.
+Physical Samsung Android testing of v1.1.0 completed successfully, covering
+recognition, nutrition, meal logging, and dashboard workflows. This is a device
+test record, separate from automated checks. The previously recorded Flutter
+analysis was clean and the full suite had 90 passing tests.
 
 ## Release preparation in progress
 
-- The v1.0.0 APK package, version, checksum, and debug signing certificate have
-  been verified. The planned app version is `1.1.0+2`.
+- The public v1.1.0 release is `1.1.0+2`; the maintenance candidate version is
+  `1.1.1+3`. The v1.0.0 APK and its original release metadata remain unchanged.
 - v1.1.0 intentionally begins a dedicated release signing identity. Existing
   v1.0.0 installations cannot update directly; uninstalling can erase the local
   SQLite diary and saved photos. Communicate the need to back up local data before
   installing the new release.
-- The local Android APK at `mobile/build/app/outputs/flutter-apk/app-release.apk` is
+- The published v1.1.0 Android APK at `mobile/build/app/outputs/flutter-apk/app-release.apk` is
   103,563,167 bytes; its SHA-256, package/version/SDK metadata and v2 signature have
-  been verified. The signer certificate fingerprint is in
-  [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md). This APK is not yet published.
-- The user confirmed final v1.1.0 APK functional testing passed on a Samsung Android
-  phone. This user report is not an independently reproduced device test.
+  verified. The release is published; its signer certificate fingerprint is in
+  [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md).
+- Final v1.1.0 APK functional testing passed on a physical Samsung Android phone.
 - A local iOS Release product exists, but strict signature verification returned
   `CSSMERR_TP_NOT_TRUSTED`; distribution signing and iOS Release-device testing are
   pending.
 - Keep a secure independent backup of the configured release keystore and its
   credentials. Do not store them in the repository.
-- Build and publish only after those checks are complete and approved.
+- v1.1.1 adds explicit Android cloud-backup and device-transfer exclusions for
+  local app data. Its isolated release build and static artifact checks passed;
+  final physical-device checks and publication remain pending.
+- The v1.1.1 candidate retains the v1.1.0 release signing identity; v1.0.0 remains
+  incompatible for in-place upgrades because it was debug-signed.
 
 Broader Android device coverage remains future work. Image-based portion estimation
 also remains separate future work; current portion weights are user-entered.

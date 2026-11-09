@@ -15,9 +15,9 @@ The Flutter asset is
 `mobile/assets/models/mobilenet_v3_small_phase9_5_14class.tflite`; labels are in
 `mobile/assets/models/labels_phase9_5_14class.txt`. The previous 13-class model,
 `mobile/assets/models/mobilenet_v3_small_phase7_v2.tflite`, is retained for rollback.
-The 14-class model is the current app model; the planned Flutter release version is
-`1.1.0+2`. The local Android v1.1.0 candidate APK has been built and verified;
-physical-device checks and publication remain pending. See
+The 14-class model is the current app model. Android v1.1.0 (`1.1.0+2`) is
+published; v1.1.1 (`1.1.1+3`) is a maintenance candidate with no model or prediction
+changes. The published v1.1.0 APK passed physical Samsung device testing. See
 [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md).
 
 ## Preprocessing and output contract
@@ -105,6 +105,8 @@ candidate separately; the production 13-class asset was preserved. Experiment
 scripts/configuration are under `ml/experiments/`. Generated datasets, checkpoints,
 reports, and isolated model outputs are under Git-ignored data/artifact locations.
 No Phase 9 experiment replaces the old rollback model.
+The dataset sources and configured train/validation/held-out cohort counts are
+documented in [`DATASET.md`](DATASET.md).
 
 ## Historical 13-class baseline
 

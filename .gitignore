@@ -6,6 +6,37 @@ __pycache__/
 # macOS
 .DS_Store
 
+# Local credentials and signing material (keep example configuration tracked)
+**/.env
+**/.env.*
+!**/.env.example
+**/*service-account*.json
+**/*credentials*.json
+**/key.properties
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.p8
+**/*.mobileprovision
+**/*.provisionprofile
+**/*.jks
+**/*.keystore
+**/id_rsa
+**/id_ed25519
+**/id_ecdsa
+**/id_dsa
+
+# Local database exports and diagnostic logs
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+**/*.dump
+**/*.sql.gz
+**/diary_export*.csv
+**/meal_export*.csv
+**/*.log
+
 # ML datasets
 ml/data/raw/
 ml/data/processed/

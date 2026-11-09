@@ -140,3 +140,28 @@ were omitted: 26 duplicates occurred within a split and eight would have crossed
 splits. For cross-split matches, priority is test, then validation, then train, so
 test content never migrates into training or validation. The manifest records both
 source and exported counts and every exclusion.
+
+## Mobile 14-class experiment cohorts
+
+The production mobile model retains ten supported labels from Food-101 and three
+regional labels from TurkishFoods-25 (`borek`, `kebap`, and `sarma`). Phase 9.3
+adds `non_food` using a reviewed Open Images V7 subset. Unsupported foods are not
+mapped to that class: they remain a separate rejection-evaluation category. The
+experiment configuration records grouped splits, conflict exclusions, and the
+frozen supported-food test membership.
+
+The configured counts after duplicate-label conflict exclusion are:
+
+| Cohort | Supported food | `non_food` | Unsupported food, evaluation only |
+| --- | ---: | ---: | ---: |
+| Training | 8,241 | 2,465 | Not used for fitting |
+| Validation | 1,116 | 528 | 6,812 |
+| Held-out test | 2,719 | 529 | 22,750 |
+
+Training examples are used for fitting; validation examples are used for model
+selection and policy evaluation. The held-out supported-food membership remains
+the existing 2,719-image test cohort. The three held-out groups are evaluated
+separately after candidate and policy choices are frozen. These cohort counts do
+not imply broad coverage of every non-food object or unsupported food. The
+classifier is not a reliable unsupported-food detector; see
+[`ML_PIPELINE.md`](ML_PIPELINE.md) for measured results.

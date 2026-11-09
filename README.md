@@ -1,169 +1,97 @@
 # Food Calorie Estimator
 
-Food Calorie Estimator is an offline-first Flutter app that classifies meal photos,
-estimates nutrition from a curated food catalog, and keeps a local meal diary.
-Classification runs on the device. Users confirm supported-food predictions and can
-adjust portion size before logging nutrition estimates.
+Food Calorie Estimator is an offline-first Flutter application for recognizing a
+limited set of foods, estimating nutrition from a curated catalog, and keeping a
+private meal diary on the device. The current maintenance candidate is
+**v1.1.1+3**; the latest published Android release is **v1.1.0**.
 
-## Key features
+## Features
 
-- Capture a photo or choose one from the gallery for food recognition.
-- Run MobileNetV3 Small through TensorFlow Lite with 13 supported food labels and a
-  separate `non_food` rejection label.
-- Confirm a supported prediction before nutrition lookup; retry or choose one of the
-  supported foods manually when the prediction is wrong.
-- Look up calories, protein, carbohydrates, and fat in a USDA-based local catalog,
-  with sourced references for regional foods.
-- Edit portion size in grams; weight is not inferred from the image.
-- Add, edit, and remove meals from the diary, then review daily and weekly summaries.
-- View seven-day calories, protein, carbohydrates, fat, and estimated macro-energy
-  distribution in the Weekly dashboard.
-- Persist meal nutrition snapshots, goals, and photo references locally with SQLite.
-- Use core workflows without an account or network connection.
+- Capture or select a meal photo and run MobileNetV3 Small inference locally with
+  TensorFlow Lite.
+- Recognize 13 supported categories: `pizza`, `hamburger`, `sushi`, `steak`,
+  `ice_cream`, `donuts`, `omelette`, `french_fries`, `chicken_wings`,
+  `spaghetti_bolognese`, `borek`, `kebap`, and `sarma`; a fourteenth `non_food`
+  output rejects many non-food objects.
+- Confirm supported predictions before nutrition is shown. When a prediction is
+  wrong, retry with Camera or Gallery, manually select and confirm a supported
+  category, or choose “My food isn't listed.”
+- Estimate calories, protein, carbohydrates, and fat from a sourced local catalog;
+  adjust portion grams before saving.
+- Add, edit, and remove meals in a SQLite diary. Review daily goals and seven-day
+  calories, macros, and estimated macro-energy distribution.
+- Use the core recognition, nutrition, and diary workflows without an account or
+  network connection.
 
-## Architecture
+## Model and limitations
 
-```text
-Camera / gallery → EXIF-corrected RGB preprocessing → 14-output TFLite model
-  → non_food rejection OR supported-food confirmation
-  → catalog lookup → editable portion → SQLite meal snapshot → diary/dashboard
-```
+The mobile model is a float32 14-output MobileNetV3 Small TFLite model. Its ordered
+labels are the 13 supported foods above followed by `non_food`. Images are oriented
+using EXIF metadata, decoded to RGB, resized with their shortest edge at 256 pixels,
+center-cropped to 224×224, and passed as float32 NHWC values in `[0,255]`. The model
+performs its own pixel rescaling. The frozen policy is argmax, without a confidence
+acceptance threshold; displayed confidence is informational.
 
-The Flutter app uses `sqflite` and a versioned app-private database. `meals` stores
-nutrition snapshots and meal metadata, `goals` stores the daily calorie goal, and
-`app_metadata` records migration state. Meal photos are kept in app-private
-Application Support storage. Today and Weekly summaries are calculated from
-persisted meals. A one-time transactional migration imports an existing JSON diary;
-JSON is not the production storage mechanism.
+On the held-out evaluation, supported-food classification accuracy was 90.33%,
+supported-food acceptance 99.63%, non-food rejection 94.33%, and unsupported-food
+rejection 2.03%. Acceptance and correct classification are different measures. The
+model is **not a reliable unsupported-food detector**: an unsupported food may be
+classified as a supported category, even with high confidence. User confirmation is
+a safeguard, not a substitute for detection. Portion weight is entered by the user
+and is not inferred from a photo.
 
-## AI/ML model
+Nutrition values are representative estimates from the bundled catalog, not a
+measurement of a particular recipe or meal. The weekly macro-energy chart converts
+protein and carbohydrates at 4 kcal/g and fat at 9 kcal/g, then normalizes those
+three contributions to 100%. Its percentages are not shares of total logged
+calories. The app does not provide micronutrient charts.
 
-The current mobile candidate is MobileNetV3 Small exported to float32 TensorFlow
-Lite. Its 14 output labels, in order, are:
+## Technology
 
-```text
-pizza, hamburger, sushi, steak, ice_cream, donuts, omelette,
-french_fries, chicken_wings, spaghetti_bolognese, borek, kebap, sarma, non_food
-```
+- Flutter/Dart for the mobile application and TensorFlow Lite for on-device
+  MobileNetV3 inference
+- SQLite (`sqflite`) for the local meal diary and persisted nutrition snapshots
+- TensorFlow/Keras and Python tools for model training and evaluation
+- Food-101 and selected TurkishFoods-25 data for supported foods; a selected Open
+  Images V7 subset for the `non_food` training label
+- USDA FoodData Central and documented regional references for the nutrition
+  catalog
 
-Input is EXIF-corrected RGB, resized with the shortest edge at 256 pixels using
-bilinear interpolation, then center-cropped to 224×224. The model receives NHWC
-float32 `[1,224,224,3]` values in `[0,255]`; MobileNetV3's internal rescaling maps
-the pixels to `[-1,1]`, so callers do not normalize them again. The frozen policy is
-argmax over all 14 outputs: indices 0–12 are supported foods and index 13 is
-`non_food`. There is no 0.55 acceptance threshold. Confidence is informational.
+## Privacy and local data
 
-On the held-out evaluation, the 14-class TFLite candidate had **90.33% supported-food
-classification accuracy**, **99.63% supported-food acceptance**, **94.33% non-food
-rejection**, and **2.03% unsupported-food rejection**. Supported-food acceptance
-means an image was assigned a supported label; it is distinct from correct
-classification. The model rejects many non-food objects but is **not a reliable
-unsupported-food detector**. Unsupported foods may still be assigned to supported
-classes, including with high confidence. The previous 13-class model remains in
-`mobile/assets/models/mobilenet_v3_small_phase7_v2.tflite` for rollback.
+Inference runs on-device. The diary and saved meal photos are stored in app-private
+local storage; this project does not transmit them to a server as part of the scan
+and logging flow; the Android manifest does not request Internet permission. The
+SQLite database and photos are not application-level encrypted and rely on the
+operating system's app sandbox. Saved photo files are copied as supplied and may
+retain EXIF metadata. The v1.1.1 candidate explicitly excludes app data from
+Android cloud backup and device-transfer rules. Local records can therefore be
+lost when uninstalling the app or changing devices; keep an independent copy of
+anything that must be retained. Android backup behavior can vary by manufacturer.
 
-The Phase 9.5 float32 TFLite export matched its selected 14-class Keras checkpoint
-on the frozen held-out metrics and passed representative Keras/TFLite parity checks.
-These 14-class results are separate from the previous deployed 13-class TFLite
-result of **88.12%** on 2,719 supported-food images. The 13-class Keras result of
-**89.41%** is also a different runtime/model comparison; neither baseline should be
-conflated with the 14-class candidate.
+## Android installation
 
-## User confirmation and nutrition
+Download the APK from the [Food Calorie Estimator v1.1.0 GitHub
+Release](https://github.com/vesaaas/Food-Calorie-Estimator/releases/tag/v1.1.0).
+The published asset is named `app-release.apk`. Review the release notes and
+checksum before installation.
 
-An argmax result for a supported class shows its predicted name and informational
-confidence and asks whether it is correct. Nutrition lookup and diary saving remain
-locked until the user confirms. If it is wrong, the user can retry with Camera or
-Gallery, manually select one of the 13 supported categories and confirm that choice,
-or say that the food is not listed. A manually chosen result is labeled as
-user-selected. `non_food` is rejected before nutrition lookup or diary saving.
+The original v1.0.0 APK was debug-signed; v1.1.0 uses a dedicated release signer.
+Android cannot install v1.1.0 as an in-place update over v1.0.0. Removing the old
+installation may erase its local diary and meal photos. Back up important data
+before uninstalling. The app has no in-app diary export or migration tool; if an
+independent backup is unavailable, uninstalling may permanently lose local data.
+The v1.1.1 candidate retains the v1.1.0 release signing identity, so it is intended
+to update v1.1.0 installations; it is not yet published.
 
-Manual selection is a user choice, not model detection. If the actual food is outside
-the 13 supported categories, the app explains that it is unsupported and does not
-require the user to choose an incorrect category.
+The archived [v1.0.0 APK](https://github.com/vesaaas/Food-Calorie-Estimator/releases/download/v1.0.0/app-release.apk)
+has SHA-256 `0aadd6c4e112d788e83201f45d0473f9c3488ab3b3d1f1c845737fbb50fa6c39`.
+The v1.1.0 APK checksum and package/signing details are in the
+[published release notes](docs/RELEASE_NOTES_v1.1.0.md).
 
-## Weekly dashboard
+## Run locally
 
-The Weekly dashboard retains its seven-day calorie chart and adds daily protein,
-carbohydrate, and fat charts from persisted meal nutrition snapshots. Its estimated
-macro-energy distribution converts protein and carbohydrates at 4 kcal/g and fat at
-9 kcal/g, then normalizes those three contributions to 100%. This chart describes
-estimated energy from the logged macros; its percentages are **not percentages of
-total logged calories**. No micronutrient visualization is provided.
-
-## Supported foods
-
-`pizza`, `hamburger`, `sushi`, `steak`, `ice_cream`, `donuts`, `omelette`,
-`french_fries`, `chicken_wings`, `spaghetti_bolognese`, `borek`, `kebap`, `sarma`.
-
-## Technology stack
-
-- Flutter and Dart for the mobile application
-- TensorFlow/Keras and TensorFlow Lite for model development and on-device inference
-- SQLite through `sqflite` for local persistence
-- Food-101 and selected TurkishFoods-25 data for food-class model development
-- USDA FoodData Central and documented regional references for nutrition data
-- Python tooling for ML experiments, dataset preparation, and nutrition verification
-
-## Testing and validation
-
-- `flutter analyze` completed cleanly and the Flutter suite passed **90 tests**.
-- Nutrition catalog verification passed 17 checks; Python meal, goal, and dashboard
-  regression verification passed 13 checks.
-- The 14-class candidate's held-out metrics were evaluated separately in Phase 9.4
-  and its float32 TFLite export and parity were checked in Phase 9.5.
-- Physical Android checks for the Phase 9.6–9.7 app changes were **reported by the
-  user as successful**. This is not an automated test or an independently reproduced
-  result. The user has also confirmed that the final v1.1.0 APK passed functional
-  testing on a Samsung Android phone. This release-device check is user-confirmed,
-  not independently reproduced here.
-- iOS Release-mode device testing and App Store distribution signing remain pending.
-
-## Android APK
-
-The latest **public** release remains **v1.0.0**. Its APK is available through
-[GitHub Releases](https://github.com/vesaaas/Food-Calorie-Estimator/releases/download/v1.0.0/app-release.apk).
-The v1.1.0 candidate (`1.1.0+2`) has been built locally and its APK signature,
-package metadata, and checksum have been verified. It has not been published.
-The user confirmed final APK functional testing passed on a Samsung Android phone.
-See the
-[Android release signing guide](docs/ANDROID_RELEASE.md) and
-[v1.1.0 release notes](docs/RELEASE_NOTES_v1.1.0.md).
-
-The original v1.0.0 APK was debug-signed. A dedicated release key is used for
-v1.1.0, so Android will not allow a direct update over the v1.0.0 installation.
-Removing the old app before installing v1.1.0 may erase its local diary and saved
-meal photos. Back up local data first.
-
-The locally verified v1.1.0 APK is `mobile/build/app/outputs/flutter-apk/app-release.apk`
-(103,563,167 bytes). Its SHA-256 is:
-
-```text
-b71e0eb55b2fa5e4bec0ce1ae7c3c237809f9540a97d603f84e5d07ca535c696
-```
-
-It is package `com.example.food_calorie_estimator`, version name/code `1.1.0` / `2`,
-min SDK 24, target SDK 36, signed with APK Signature Scheme v2. The signer
-certificate SHA-256 is recorded in the release guide. This build artifact is local
-and ignored by Git; do not interpret it as a published GitHub release.
-
-The validated v1.0.0 release APK SHA-256 is:
-
-```text
-0aadd6c4e112d788e83201f45d0473f9c3488ab3b3d1f1c845737fbb50fa6c39
-```
-
-## Limitations
-
-The `non_food` class is not a general OOD detector. Unsupported foods can still
-receive high-confidence supported-food predictions. User confirmation is a safety
-step, not a substitute for unsupported-food detection. Portion weight is entered by
-the user rather than inferred from an image. Nutrition values are estimates based on
-representative reference foods and do not capture every recipe or preparation.
-
-## Running the project
-
-From the project root, install the Flutter dependencies and launch the app:
+Install Flutter dependencies and launch from `mobile/`:
 
 ```bash
 cd mobile
@@ -171,22 +99,48 @@ flutter pub get
 flutter run
 ```
 
-For Python ML and nutrition tooling, use Python 3.12 and install the pinned project
-requirements in a virtual environment:
+Run the mobile checks from the same directory:
 
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
+flutter analyze
+flutter test
 ```
+
+Python ML and nutrition utilities use the pinned root `requirements.txt`; see the
+ML pipeline and nutrition guides before preparing local datasets. Training data,
+checkpoints, and experiment outputs are not required to run the app.
+
+## Repository layout
+
+```text
+mobile/       Flutter app, tests, and versioned model/catalog assets
+ml/           Model and dataset pipeline plus isolated experiments
+nutrition/    Canonical nutrition catalog and calculation tools
+app/          Python domain and storage utilities
+docs/         Architecture, data, ML, nutrition, and release documentation
+```
+
+## Platform and project status
+
+Android is the released platform. The v1.1.0 Android APK passed functional testing
+on a physical Samsung device, including recognition, nutrition, meal logging, and
+dashboard flows. The v1.1.1 maintenance candidate includes Android backup/privacy
+hardening and documentation/version updates. Its isolated release build and static
+artifact checks passed; physical-device verification and publication are pending.
+The Flutter project contains an iOS implementation, but
+iOS Release-mode device testing and App Store distribution signing are pending.
+
+The v1.1.0 release and its published APK are unchanged. The 13-class TFLite model
+remains bundled as a rollback asset.
 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
-- [Current production state](docs/CURRENT_STATE.md)
-- [ML pipeline and evaluation](docs/ML_PIPELINE.md)
-- [Android release signing and upgrade impact](docs/ANDROID_RELEASE.md)
-- [v1.1.0 release notes and verification status](docs/RELEASE_NOTES_v1.1.0.md)
-- [Nutrition methodology](docs/NUTRITION.md)
-- [Dataset details](docs/DATASET.md)
+- [Current state](docs/CURRENT_STATE.md)
 - [Engineering roadmap](docs/ROADMAP.md)
+- [Dataset and split methodology](docs/DATASET.md)
+- [ML pipeline and evaluation](docs/ML_PIPELINE.md)
+- [Nutrition methodology](docs/NUTRITION.md)
+- [Android release guide](docs/ANDROID_RELEASE.md)
+- [Published v1.1.0 release notes](docs/RELEASE_NOTES_v1.1.0.md)
+- [v1.1.1 maintenance candidate notes](docs/RELEASE_NOTES_v1.1.1.md)

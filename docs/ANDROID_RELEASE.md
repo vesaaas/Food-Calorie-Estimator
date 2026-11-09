@@ -11,15 +11,16 @@ release keystore configured through the ignored file `mobile/android/key.propert
 Because the signing identity changes, Android will not install v1.1.0 as an in-place
 update over v1.0.0. Users must remove the old app before installing the new one.
 Uninstalling removes app-private data, including the local SQLite diary and saved
-meal photos; arrange a data backup before reinstalling. The app does not provide an
-automatic migration between these signing identities.
+meal photos; arrange an independent data backup before reinstalling. The app does
+not provide an in-app export or automatic migration between these signing
+identities. If no independent backup is available, uninstalling may permanently
+lose local data.
 
-## Locally verified v1.1.0 APK
+## Published v1.1.0 APK
 
-The release candidate at
-`mobile/build/app/outputs/flutter-apk/app-release.apk` is a local build output and
-is ignored by Git. It has not been uploaded as a public release. Local verification
-on 2026-11-09 found:
+The published release APK at
+`mobile/build/app/outputs/flutter-apk/app-release.apk` was locally verified on
+2026-11-09 before publication. Verification found:
 
 - Size: 103,563,167 bytes.
 - SHA-256: `b71e0eb55b2fa5e4bec0ce1ae7c3c237809f9540a97d603f84e5d07ca535c696`.
@@ -30,12 +31,10 @@ on 2026-11-09 found:
   signature; no v1 signature was present.
 - Signer certificate SHA-256: `c9e973cf8899bd79bfc31d4c6021ba53a9d503841e0aa948eb332ed8fbe922c7`.
 
-The fingerprint matches the expected release fingerprint supplied for this build.
-Verification inspected the APK signature; it did not read or disclose signing
-credentials or private keystore contents. The user confirmed the final v1.1.0 APK
-passed functional testing on a Samsung Android phone. This is user-reported
-verification and was not independently reproduced as part of the repository checks.
-The v1.0.0 public APK URL and checksum remain recorded in the root README.
+The signer fingerprint is public certificate metadata. APK verification does not
+reveal the private keystore key or its passwords. Final functional testing passed
+on a physical Samsung Android phone. The v1.0.0 public APK URL and checksum remain
+recorded in the root README.
 
 The v1.1.0 release build must use the dedicated signing configuration. Gradle does
 not fall back to debug signing. `key.properties` and keystore files are excluded by
@@ -86,12 +85,55 @@ can be restored. Losing the key prevents future updates signed with that identit
 
 ## Release checks
 
-Before release, verify the package ID remains
-`com.example.food_calorie_estimator`, version name/code are `1.1.0` / `2`, and the
-release APK is signed by the dedicated certificate. Do not publish or install a
-release artifact until the keystore is available, the signing configuration passes,
-and the local-data migration impact has been communicated.
+Before the v1.1.1 release, verify the package ID remains
+`com.example.food_calorie_estimator`, version name/code are `1.1.1` / `3`, and the
+APK is signed by the same dedicated certificate as v1.1.0. Do not publish or
+install a release artifact until the signing configuration passes and the local-data
+retention impact has been communicated. Direct update from v1.0.0 remains
+incompatible; its debug signing identity differs from the dedicated release signer.
 
-The local Android candidate has passed package/version/SDK and APK signature checks,
-and final functional testing on a Samsung Android phone was confirmed by the user.
-Separate release publication remains pending until the GitHub Release is created.
+The isolated v1.1.1 candidate APK was built and checked locally. It is not a
+published asset and remains subject to physical-device testing:
+
+- Package: `com.example.food_calorie_estimator`.
+- Version name/code: `1.1.1` / `3`; minimum/target SDK: 24 / 36.
+- Size: 103,564,315 bytes; SHA-256:
+  `09de5811df6db37647f6367d0f8edd02b971b628ecb53a43e5622e5527dffd77`.
+- `apksigner` verified APK Signature Scheme v2. The certificate SHA-256 matches
+  the dedicated v1.1.0 release signer recorded above.
+- The effective release manifest has `allowBackup=false` and references both
+  backup-rule resources. The packaged legacy, cloud, and device-transfer rules
+  exclude app-private data domains.
+
+## Local diary backup policy
+
+The v1.1.1 candidate sets `android:allowBackup="false"` and references explicit
+legacy full-backup and Android 12+ data-extraction rules. The rules exclude app
+data from cloud backup and device transfer, including the SQLite diary and saved
+meal photos. Android documentation notes that device-to-device transfer behavior
+may vary by manufacturer, so verify behavior on supported devices. See the official
+[Android Auto Backup documentation](https://developer.android.com/identity/data/autobackup).
+This is not a data export feature. App-private data may be lost on uninstall or
+device change; users should keep an independent copy of data they need. The policy
+does not alter the database schema, migration, or photo-storage format.
+These rules cover Android cloud backup and Android device transfer. Android 16
+QPR2 cross-platform transfer to iOS uses a separate configuration section; no
+cross-platform diary migration is implemented or claimed.
+
+The published v1.1.0 manifest did not define backup exclusions, so Android's
+default backup behavior may have included app data when backup was enabled on a
+device. The v1.1.1 rules apply to subsequent backup and transfer operations; they
+do not delete copies already held by an Android backup provider.
+
+## Flutter build-path metadata
+
+Inspection of the published APK and the isolated v1.1.1 candidate found an absolute
+build-root string in each ABI's Flutter `libapp.so`. In the published artifact it
+identifies the developer home directory; the isolated candidate contains its
+temporary build root instead. The string reveals build-environment path metadata,
+not a credential or the source files themselves. A standard release build retained
+this metadata. A diagnostic build with Flutter's supported obfuscation and
+split-symbol options retained the same build-root reference and emitted an ELF
+DWARF warning, so those options were not adopted for this candidate. No unsupported
+binary rewriting or unverified workaround was applied. Removing the metadata would
+require a verified approach that preserves usable symbolized diagnostics.

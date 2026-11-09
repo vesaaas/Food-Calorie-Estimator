@@ -67,14 +67,17 @@ flutter analyze
 flutter test
 ```
 
-The latest check completed cleanly with **90 passing Flutter tests**. Phase 9.6–9.7
-physical Android checks were reported successful by the user; this is not an
-automated test or an independent reproduction. The v1.1.0+2 APK has since been
-built locally and its SHA-256, package/version metadata, and APK v2 signature were
-verified. The APK is a local ignored build output, not a published release. The
-user confirmed it passed functional testing on a Samsung Android phone; this was
-not independently reproduced during this repository check. See
+The last recorded check completed cleanly with **90 passing Flutter tests**.
+Physical Samsung Android testing of the published v1.1.0 APK completed
+successfully, covering the main scan, nutrition, diary, and dashboard workflows.
+The local APK's SHA-256, package/version metadata, and APK v2 signature were
+verified before publication. See
 [`../docs/RELEASE_NOTES_v1.1.0.md`](../docs/RELEASE_NOTES_v1.1.0.md).
+
+The current maintenance candidate is `1.1.1+3`. It adds Android backup exclusions
+for app-private data without changing the database or photo-storage format. An
+isolated release build and package, signer, and backup-manifest checks passed;
+physical-device verification remains pending.
 
 An iOS Release app product was built locally with version 1.1.0 (build 2), but
 strict local code-signature verification reported `CSSMERR_TP_NOT_TRUSTED`. This
@@ -83,6 +86,9 @@ physical-device testing also remains pending.
 
 The v1.0.0 APK used the debug signing identity. A dedicated release key begins
 with v1.1.0, so it cannot directly update v1.0.0. Removing the old installation
-may erase the local diary and meal photos; back them up first. See
-[`../docs/ANDROID_RELEASE.md`](../docs/ANDROID_RELEASE.md). The public download and
-checksum in the root README refer to v1.0.0 only.
+may erase the local diary and meal photos; back them up first. Android-managed
+backups are excluded by the v1.1.1 candidate policy, so do not rely on device
+transfer to preserve the diary. The app has no in-app export or migration feature.
+See [`../docs/ANDROID_RELEASE.md`](../docs/ANDROID_RELEASE.md). The root README
+preserves the v1.0.0 archival checksum and links to the published v1.1.0 release
+evidence.

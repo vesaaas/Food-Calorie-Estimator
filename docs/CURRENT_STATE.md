@@ -2,9 +2,10 @@
 
 The current Flutter application provides on-device food classification, nutrition
 estimation, local meal logging, and daily/weekly summaries. Core workflows operate
-offline. The v1.1.0 Android candidate APK has been built and locally verified. The
-user confirmed its functional testing passed on a Samsung Android phone. Release
-publication is the remaining Android step.
+offline. The public Android release is v1.1.0 (`1.1.0+2`). The v1.1.1 (`1.1.1+3`)
+maintenance candidate adds explicit Android backup exclusions and documentation
+updates. An isolated release build and package, signer, and backup-manifest checks
+passed; physical-device verification remains pending.
 
 ## Mobile model and decision policy
 
@@ -59,40 +60,52 @@ logged calories. Micronutrient charts are not present.
 
 - Flutter analysis completed cleanly and the full Flutter suite passed **90 tests**.
 - Phase 9.5 recorded Keras/TFLite parity checks for the frozen 14-class candidate.
-- Physical Android checks for the Phase 9.6–9.7 changes were reported successful by
-  the user. They are not automated or independently reproduced by this document.
-- `mobile/pubspec.yaml` now declares the planned app version `1.1.0+2`.
+- Physical Samsung Android testing of v1.1.0 completed successfully, covering
+  recognition, nutrition, meal logging, and dashboard workflows. This is a device
+  test record, separate from automated checks.
+- `mobile/pubspec.yaml` declares the v1.1.1 maintenance candidate version `1.1.1+3`.
 - The original v1.0.0 APK checksum, package, version, and signer were verified
   locally; v1.0.0 was signed with the Android debug identity. Starting with v1.1.0,
   release signing uses a dedicated keystore configured through ignored
   `mobile/android/key.properties`. That identity change prevents a direct update
   over v1.0.0. Removing the existing app may erase the local SQLite diary and saved
   photos; users need a backup before reinstalling.
-- The local v1.1.0 APK at
+- The published v1.1.0 APK at
   `mobile/build/app/outputs/flutter-apk/app-release.apk` is 103,563,167 bytes with
   SHA-256 `b71e0eb55b2fa5e4bec0ce1ae7c3c237809f9540a97d603f84e5d07ca535c696`.
   `aapt` verified package `com.example.food_calorie_estimator`, version name/code
   `1.1.0` / `2`, min SDK 24 and target SDK 36. `apksigner` verified the APK v2
   signature and certificate SHA-256
-  `c9e973cf8899bd79bfc31d4c6021ba53a9d503841e0aa948eb332ed8fbe922c7`. The APK is
-  a local ignored build output, not a published release.
+  `c9e973cf8899bd79bfc31d4c6021ba53a9d503841e0aa948eb332ed8fbe922c7`. The GitHub
+  release is linked from the root README.
 - Android release signing uses the dedicated configuration and does not fall back
   to debug signing. The v1.0.0 debug signer differs, so a direct update is not
   possible; uninstalling may delete the local diary and meal photos. Preserve a
   backup before migration. Do not put the release keystore or local signing
   properties under version control.
-- The user confirmed the final v1.1.0 APK passed functional testing on a Samsung
-  Android phone. This is user-reported evidence, not an independently reproduced
-  test in this repository audit.
 - A local iOS Release app product reports version 1.1.0/build 2, but strict
   `codesign` verification returned `CSSMERR_TP_NOT_TRUSTED`; this is not evidence
   of App Store distribution-signing readiness. iOS Release-device testing remains
   pending.
 - The current Flutter Gradle plugin resolves `flutter.minSdkVersion` to API 24,
   which supports the original APK's v2 signing scheme.
-- Final Android device testing is user-confirmed complete; publication remains
-  pending. iOS Release-device testing and App Store distribution signing remain
-  pending.
+- Final v1.1.0 Android device testing and publication are complete. The v1.1.1
+  maintenance candidate build and static artifact checks are complete; final
+  physical-device checks and publication remain pending.
+  iOS Release-device testing and App Store distribution signing remain pending.
+
+## Android backup and data retention
+
+Starting with the v1.1.1 candidate, the Android manifest disables Auto Backup and
+references explicit legacy and Android 12+ extraction rules that exclude app data
+from cloud backup and device transfer. This includes the app-private SQLite diary
+and saved meal photos. No stored records or storage formats were changed. Android
+backup behavior can vary by device manufacturer; this policy is not a user-facing
+export feature. Local diary data and photos may be lost when uninstalling or
+changing devices, so retain a separate copy of anything that must be kept.
+The v1.1.0 manifest did not define backup exclusions, so Android's default may have
+included app data when backup was enabled. The new policy does not delete copies
+already held by an Android backup provider.
 
 See [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md) for signing setup, upgrade
 compatibility, and the local diary data implications.

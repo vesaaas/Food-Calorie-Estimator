@@ -27,16 +27,19 @@ detector.
 The original v1.0.0 APK was debug-signed; v1.1.0 uses a dedicated release signer.
 Android cannot directly update a v1.0.0 installation with this signer. Uninstalling
 the old app may delete its local diary and saved meal photos, so back up local data
-before reinstalling.
+before reinstalling. The app has no in-app diary export or migration tool; data
+recovery after uninstall is not guaranteed.
 
-The Android APK is `FoodCalorieEstimator-v1.1.0-android.apk` (103,563,167 bytes),
-package `com.example.food_calorie_estimator`, version name/code `1.1.0` / `2`, min
-SDK 24, target SDK 36. Its SHA-256 is
+The published GitHub asset is named `app-release.apk` (103,563,167 bytes). The
+suggested descriptive filename for a locally saved copy is
+`FoodCalorieEstimator-v1.1.0-android.apk`; that is not the uploaded asset name.
+The APK package is `com.example.food_calorie_estimator`, version name/code `1.1.0`
+/ `2`, min SDK 24, target SDK 36. Its SHA-256 is
 `b71e0eb55b2fa5e4bec0ce1ae7c3c237809f9540a97d603f84e5d07ca535c696`; its APK v2
 signature was verified. The signer certificate fingerprint and verification detail
-are in [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md). The user confirmed that final
-functional testing passed on a Samsung Android phone; this is user-reported and was
-not independently reproduced here.
+are in [`ANDROID_RELEASE.md`](ANDROID_RELEASE.md). Final functional testing passed
+on a physical Samsung Android device, covering recognition, nutrition estimation,
+meal logging, and dashboard workflows.
 
 ## iOS status
 

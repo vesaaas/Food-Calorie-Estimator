@@ -12,3 +12,9 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+**/*.pem
+**/*.p12
+**/*.pfx
+**/*.p8
+**/*.mobileprovision
+**/*.provisionprofile

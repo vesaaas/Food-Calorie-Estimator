@@ -80,6 +80,14 @@ copied into SQLite in one transaction. The migration marker is written only afte
 successful database writes, and the source file is retained. JSON is a one-time
 backward-compatibility path, not current production persistence.
 
+SQLite and photo files are stored in app-private Application Support storage and are
+not application-level encrypted. Photo files are copied without metadata stripping
+and may retain source EXIF metadata. The app scan/log flow contains no network
+upload, and the Android manifest does not request Internet permission. The v1.1.1
+candidate excludes app data from Android-managed backup and device-transfer rules;
+Android device-transfer behavior can vary by manufacturer. Local data can be lost
+on uninstall or device change.
+
 ## Production model evaluation
 
 The Phase 9.5 float32 TFLite export was checked against the selected 14-class Keras
